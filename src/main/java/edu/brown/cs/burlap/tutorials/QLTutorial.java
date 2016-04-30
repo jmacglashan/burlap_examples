@@ -164,7 +164,7 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QFunction {
 		SimulatedEnvironment env = new SimulatedEnvironment(domain,rf, tf, s);
 
 		//create Q-learning
-		burlap.tutorials.cpl.QLTutorial agent = new burlap.tutorials.cpl.QLTutorial(domain, 0.99, new SimpleHashableStateFactory(),
+		QLTutorial agent = new QLTutorial(domain, 0.99, new SimpleHashableStateFactory(),
 				new ValueFunctionInitialization.ConstantValueFunctionInitialization(), 0.1, 0.1);
 
 		//run Q-learning and store results in a list
