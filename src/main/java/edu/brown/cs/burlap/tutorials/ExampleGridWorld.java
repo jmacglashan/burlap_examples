@@ -458,13 +458,13 @@ public class ExampleGridWorld implements DomainGenerator{
 
 	public static void main(String [] args){
 
-		burlap.tutorials.bd.ExampleGridWorld gen = new burlap.tutorials.bd.ExampleGridWorld();
+		ExampleGridWorld gen = new ExampleGridWorld();
 		Domain domain = gen.generateDomain();
 
-		State initialState = burlap.tutorials.bd.ExampleGridWorld.getExampleState(domain);
+		State initialState = ExampleGridWorld.getExampleState(domain);
 
-		RewardFunction rf = new burlap.tutorials.bd.ExampleGridWorld.ExampleRF(10, 10);
-		TerminalFunction tf = new burlap.tutorials.bd.ExampleGridWorld.ExampleTF(10, 10);
+		RewardFunction rf = new ExampleGridWorld.ExampleRF(10, 10);
+		TerminalFunction tf = new ExampleGridWorld.ExampleTF(10, 10);
 
 		SimulatedEnvironment env = new SimulatedEnvironment(domain, rf, tf, initialState);
 
