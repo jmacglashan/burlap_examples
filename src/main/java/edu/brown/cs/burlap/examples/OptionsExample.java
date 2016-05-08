@@ -21,6 +21,7 @@ import burlap.domain.singleagent.gridworld.state.GridWorldState;
 import burlap.mdp.auxiliary.stateconditiontest.StateConditionTest;
 import burlap.mdp.core.Domain;
 import burlap.mdp.core.TerminalFunction;
+import burlap.mdp.core.oo.state.OOVariableKey;
 import burlap.mdp.core.state.State;
 import burlap.mdp.singleagent.RewardFunction;
 import burlap.mdp.singleagent.common.UniformCostRF;
@@ -233,8 +234,8 @@ public class OptionsExample {
 		final StateConditionTest initiationConditions = new StateConditionTest() {
 
 			public boolean satisfies(State s) {
-				int x = (Integer)s.get(GridWorldDomain.VAR_X);
-				int y = (Integer)s.get(GridWorldDomain.VAR_Y);
+				int x = (Integer)s.get(new OOVariableKey(GridWorldDomain.CLASS_AGENT, GridWorldDomain.VAR_X));
+				int y = (Integer)s.get(new OOVariableKey(GridWorldDomain.CLASS_AGENT, GridWorldDomain.VAR_Y));
 
 				return x >= minX && x <= maxX && y>= minY && y <= maxY;
 			}
@@ -252,8 +253,8 @@ public class OptionsExample {
 		StateConditionTest goalCondition = new StateConditionTest() {
 
 			public boolean satisfies(State s) {
-				int x = (Integer)s.get(GridWorldDomain.VAR_X);
-				int y = (Integer)s.get(GridWorldDomain.VAR_Y);
+				int x = (Integer)s.get(new OOVariableKey(GridWorldDomain.CLASS_AGENT, GridWorldDomain.VAR_X));
+				int y = (Integer)s.get(new OOVariableKey(GridWorldDomain.CLASS_AGENT, GridWorldDomain.VAR_Y));
 				return x == doorx && y == doory;
 			}
 		};
