@@ -139,8 +139,8 @@ public class BasicBehavior {
 
 		p.evaluateBehavior(initialState, rf, tf).writeToFile(outputPath + "vi");
 
-		//simpleValueFunctionVis((ValueFunction)planner, p);
-		manualValueFunctionVis((ValueFunction)planner, p);
+		simpleValueFunctionVis((ValueFunction)planner, p);
+		//manualValueFunctionVis((ValueFunction)planner, p);
 
 	}
 
@@ -201,7 +201,7 @@ public class BasicBehavior {
 
 		//define a 2D painter of state values, specifying which attributes correspond to the x and y coordinates of the canvas
 		StateValuePainter2D svp = new StateValuePainter2D(rb);
-		svp.setXYKeys("agent:x", "agent:y", new VariableDomain(0, 11), new VariableDomain(0, 11), 11, 11);
+		svp.setXYKeys("agent:x", "agent:y", new VariableDomain(0, 11), new VariableDomain(0, 11), 1, 1);
 
 		//create our ValueFunctionVisualizer that paints for all states
 		//using the ValueFunction source and the state value painter we defined
@@ -209,7 +209,7 @@ public class BasicBehavior {
 
 		//define a policy painter that uses arrow glyphs for each of the grid world actions
 		PolicyGlyphPainter2D spp = new PolicyGlyphPainter2D();
-		spp.setXYKeys("agent:x", "agent:y", new VariableDomain(0, 11), new VariableDomain(0, 11), 11, 11);
+		spp.setXYKeys("agent:x", "agent:y", new VariableDomain(0, 11), new VariableDomain(0, 11), 1, 1);
 
 		spp.setActionNameGlyphPainter(GridWorldDomain.ACTION_NORTH, new ArrowActionGlyph(0));
 		spp.setActionNameGlyphPainter(GridWorldDomain.ACTION_SOUTH, new ArrowActionGlyph(1));
