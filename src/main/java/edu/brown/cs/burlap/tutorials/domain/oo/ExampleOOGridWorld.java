@@ -220,8 +220,8 @@ public class ExampleOOGridWorld implements DomainGenerator{
 		StateRenderLayer rl = new StateRenderLayer();
 		rl.addStatePainter(new ExampleOOGridWorld.WallPainter());
 		OOStatePainter ooStatePainter = new OOStatePainter();
-		ooStatePainter.addObjectClassPainter(CLASS_AGENT, new AgentPainter());
 		ooStatePainter.addObjectClassPainter(CLASS_LOCATION, new LocationPainter());
+		ooStatePainter.addObjectClassPainter(CLASS_AGENT, new AgentPainter());
 		rl.addStatePainter(ooStatePainter);
 
 
