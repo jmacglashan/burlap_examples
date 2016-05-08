@@ -1,36 +1,37 @@
-package edu.brown.cs.burlap.tutorials;
+package edu.brown.cs.burlap.tutorials.domain.oo;
 
-import burlap.oomdp.auxiliary.DomainGenerator;
-import burlap.oomdp.core.*;
-import burlap.oomdp.core.objects.MutableObjectInstance;
-import burlap.oomdp.core.objects.ObjectInstance;
-import burlap.oomdp.core.states.MutableState;
-import burlap.oomdp.core.states.State;
-import burlap.oomdp.singleagent.FullActionModel;
-import burlap.oomdp.singleagent.GroundedAction;
-import burlap.oomdp.singleagent.RewardFunction;
-import burlap.oomdp.singleagent.SADomain;
-import burlap.oomdp.singleagent.common.SimpleAction;
-import burlap.oomdp.singleagent.environment.SimulatedEnvironment;
-import burlap.oomdp.singleagent.explorer.VisualExplorer;
-import burlap.oomdp.visualizer.ObjectPainter;
-import burlap.oomdp.visualizer.StateRenderLayer;
-import burlap.oomdp.visualizer.StaticPainter;
-import burlap.oomdp.visualizer.Visualizer;
+import burlap.mdp.auxiliary.DomainGenerator;
+import burlap.mdp.auxiliary.common.SinglePFTF;
+import burlap.mdp.core.Domain;
+import burlap.mdp.core.TerminalFunction;
+import burlap.mdp.core.TransitionProbability;
+import burlap.mdp.core.oo.OODomain;
+import burlap.mdp.core.oo.propositional.PropositionalFunction;
+import burlap.mdp.core.oo.state.OOState;
+import burlap.mdp.core.oo.state.ObjectInstance;
+import burlap.mdp.core.oo.state.generic.GenericOOState;
+import burlap.mdp.core.state.State;
+import burlap.mdp.singleagent.FullActionModel;
+import burlap.mdp.singleagent.GroundedAction;
+import burlap.mdp.singleagent.common.SimpleAction;
+import burlap.mdp.singleagent.common.SingleGoalPFRF;
+import burlap.mdp.singleagent.environment.SimulatedEnvironment;
+import burlap.mdp.singleagent.explorer.VisualExplorer;
+import burlap.mdp.singleagent.oo.OOSADomain;
+import burlap.mdp.visualizer.*;
 
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * @author James MacGlashan.
  */
-public class ExampleGridWorld implements DomainGenerator{
+public class ExampleOOGridWorld implements DomainGenerator{
 
-	public static final String ATT_X = "x";
-	public static final String ATT_Y = "y";
+	public static final String VAR_X = "x";
+	public static final String VAR_Y = "y";
 
 	public static final String CLASS_AGENT = "agent";
 	public static final String CLASS_LOCATION = "location";
@@ -59,64 +60,24 @@ public class ExampleGridWorld implements DomainGenerator{
 	};
 
 
-	public Domain generateDomain() {
+	@Override
+	public OOSADomain generateDomain() {
 
-		SADomain domain = new SADomain();
+		OOSADomain domain = new OOSADomain();
 
-		Attribute xatt = new Attribute(domain, ATT_X, Attribute.AttributeType.INT);
-		xatt.setLims(0, 10);
+		domain.addStateClass(CLASS_AGENT, ExGridAgent.class)
+				.addStateClass(CLASS_LOCATION, EXGridLocation.class);
 
-		Attribute yatt = new Attribute(domain, ATT_Y, Attribute.AttributeType.INT);
-		yatt.setLims(0, 10);
+		new ExampleOOGridWorld.Movement(ACTION_NORTH, domain, 0);
+		new ExampleOOGridWorld.Movement(ACTION_SOUTH, domain, 1);
+		new ExampleOOGridWorld.Movement(ACTION_EAST, domain, 2);
+		new ExampleOOGridWorld.Movement(ACTION_WEST, domain, 3);
 
-		ObjectClass agentClass = new ObjectClass(domain, CLASS_AGENT);
-		agentClass.addAttribute(xatt);
-		agentClass.addAttribute(yatt);
+		new AtLocation(domain);
 
-		ObjectClass locationClass = new ObjectClass(domain, CLASS_LOCATION);
-		locationClass.addAttribute(xatt);
-		locationClass.addAttribute(yatt);
-
-		new ExampleGridWorld.Movement(ACTION_NORTH, domain, 0);
-		new ExampleGridWorld.Movement(ACTION_SOUTH, domain, 1);
-		new ExampleGridWorld.Movement(ACTION_EAST, domain, 2);
-		new ExampleGridWorld.Movement(ACTION_WEST, domain, 3);
-
-		new ExampleGridWorld.AtLocation(domain);
 
 		return domain;
 	}
-
-	public static State getExampleState(Domain domain){
-		State s = new MutableState();
-		ObjectInstance agent = new MutableObjectInstance(domain.getObjectClass(CLASS_AGENT), "agent0");
-		agent.setValue(ATT_X, 0);
-		agent.setValue(ATT_Y, 0);
-
-		ObjectInstance location = new MutableObjectInstance(domain.getObjectClass(CLASS_LOCATION), "location0");
-		location.setValue(ATT_X, 10);
-		location.setValue(ATT_Y, 10);
-
-		s.addObject(agent);
-		s.addObject(location);
-
-		return s;
-	}
-
-	public StateRenderLayer getStateRenderLayer(){
-		StateRenderLayer rl = new StateRenderLayer();
-		rl.addStaticPainter(new ExampleGridWorld.WallPainter());
-		rl.addObjectClassPainter(CLASS_LOCATION, new ExampleGridWorld.LocationPainter());
-		rl.addObjectClassPainter(CLASS_AGENT, new ExampleGridWorld.AgentPainter());
-
-
-		return rl;
-	}
-
-	public Visualizer getVisualizer(){
-		return new Visualizer(this.getStateRenderLayer());
-	}
-
 
 	protected class Movement extends SimpleAction implements FullActionModel {
 
@@ -139,9 +100,12 @@ public class ExampleGridWorld implements DomainGenerator{
 		@Override
 		protected State performActionHelper(State s, GroundedAction groundedAction) {
 			//get agent and current position
-			ObjectInstance agent = s.getFirstObjectOfClass(CLASS_AGENT);
-			int curX = agent.getIntValForAttribute(ATT_X);
-			int curY = agent.getIntValForAttribute(ATT_Y);
+
+			GenericOOState oos = (GenericOOState)s;
+			ExGridAgent agent = (ExGridAgent)oos.touch(CLASS_AGENT);
+
+			int curX = agent.x;
+			int curY = agent.y;
 
 			//sample directon with random roll
 			double r = Math.random();
@@ -159,30 +123,32 @@ public class ExampleGridWorld implements DomainGenerator{
 			int [] newPos = this.moveResult(curX, curY, dir);
 
 			//set the new position
-			agent.setValue(ATT_X, newPos[0]);
-			agent.setValue(ATT_Y, newPos[1]);
+			agent.x = newPos[0];
+			agent.y = newPos[1];
 
 			//return the state we just modified
 			return s;
 		}
 
 
-		public List<TransitionProbability> getTransitions(State s, GroundedAction groundedAction) {
+		public java.util.List<TransitionProbability> getTransitions(State s, GroundedAction groundedAction) {
 			//get agent and current position
-			ObjectInstance agent = s.getFirstObjectOfClass(CLASS_AGENT);
-			int curX = agent.getIntValForAttribute(ATT_X);
-			int curY = agent.getIntValForAttribute(ATT_Y);
+			GenericOOState oos = (GenericOOState)s;
+			ExGridAgent agent = (ExGridAgent)oos.object(CLASS_AGENT);
 
-			List<TransitionProbability> tps = new ArrayList<TransitionProbability>(4);
+			int curX = agent.x;
+			int curY = agent.y;
+
+			java.util.List<TransitionProbability> tps = new ArrayList<TransitionProbability>(4);
 			TransitionProbability noChangeTransition = null;
 			for(int i = 0; i < this.directionProbs.length; i++){
 				int [] newPos = this.moveResult(curX, curY, i);
 				if(newPos[0] != curX || newPos[1] != curY){
 					//new possible outcome
-					State ns = s.copy();
-					ObjectInstance nagent = ns.getFirstObjectOfClass(CLASS_AGENT);
-					nagent.setValue(ATT_X, newPos[0]);
-					nagent.setValue(ATT_Y, newPos[1]);
+					GenericOOState ns = oos.copy();
+					ExGridAgent nagent = (ExGridAgent)oos.touch(CLASS_AGENT);
+					nagent.x = newPos[0];
+					nagent.y = newPos[1];
 
 					//create transition probability object and add to our list of outcomes
 					tps.add(new TransitionProbability(ns, this.directionProbs[i]));
@@ -228,12 +194,12 @@ public class ExampleGridWorld implements DomainGenerator{
 			int nx = curX + xdelta;
 			int ny = curY + ydelta;
 
-			int width = ExampleGridWorld.this.map.length;
-			int height = ExampleGridWorld.this.map[0].length;
+			int width = ExampleOOGridWorld.this.map.length;
+			int height = ExampleOOGridWorld.this.map[0].length;
 
 			//make sure new position is valid (not a wall or off bounds)
 			if(nx < 0 || nx >= width || ny < 0 || ny >= height ||
-					ExampleGridWorld.this.map[nx][ny] == 1){
+					ExampleOOGridWorld.this.map[nx][ny] == 1){
 				nx = curX;
 				ny = curY;
 			}
@@ -246,25 +212,42 @@ public class ExampleGridWorld implements DomainGenerator{
 
 	}
 
+	public Visualizer getVisualizer(){
+		return new Visualizer(this.getStateRenderLayer());
+	}
+
+	public StateRenderLayer getStateRenderLayer(){
+		StateRenderLayer rl = new StateRenderLayer();
+		rl.addStatePainter(new ExampleOOGridWorld.WallPainter());
+		OOStatePainter ooStatePainter = new OOStatePainter();
+		ooStatePainter.addObjectClassPainter(CLASS_AGENT, new AgentPainter());
+		ooStatePainter.addObjectClassPainter(CLASS_LOCATION, new LocationPainter());
+		rl.addStatePainter(ooStatePainter);
+
+
+		return rl;
+	}
+
 
 	protected class AtLocation extends PropositionalFunction {
 
-		public AtLocation(Domain domain){
+		public AtLocation(OODomain domain){
 			super(PF_AT, domain, new String []{CLASS_AGENT, CLASS_LOCATION});
 		}
 
 		@Override
-		public boolean isTrue(State s, String... params) {
-			ObjectInstance agent = s.getObject(params[0]);
-			ObjectInstance location = s.getObject(params[1]);
+		public boolean isTrue(OOState s, String... params) {
+			ObjectInstance agent = s.object(params[0]);
+			ObjectInstance location = s.object(params[1]);
 
-			int ax = agent.getIntValForAttribute(ATT_X);
-			int ay = agent.getIntValForAttribute(ATT_Y);
+			int ax = (Integer)agent.get(VAR_X);
+			int ay = (Integer)agent.get(VAR_Y);
 
-			int lx = location.getIntValForAttribute(ATT_X);
-			int ly = location.getIntValForAttribute(ATT_Y);
+			int lx = (Integer)location.get(VAR_X);
+			int ly = (Integer)location.get(VAR_Y);
 
 			return ax == lx && ay == ly;
+
 		}
 
 
@@ -273,7 +256,7 @@ public class ExampleGridWorld implements DomainGenerator{
 
 
 
-	public class WallPainter implements StaticPainter {
+	public class WallPainter implements StatePainter {
 
 		public void paint(Graphics2D g2, State s, float cWidth, float cHeight) {
 
@@ -281,8 +264,8 @@ public class ExampleGridWorld implements DomainGenerator{
 			g2.setColor(Color.BLACK);
 
 			//set up floats for the width and height of our domain
-			float fWidth = ExampleGridWorld.this.map.length;
-			float fHeight = ExampleGridWorld.this.map[0].length;
+			float fWidth = ExampleOOGridWorld.this.map.length;
+			float fHeight = ExampleOOGridWorld.this.map[0].length;
 
 			//determine the width of a single cell
 			//on our canvas such that the whole map can be painted
@@ -291,11 +274,11 @@ public class ExampleGridWorld implements DomainGenerator{
 
 			//pass through each cell of our map and if it's a wall, paint a black rectangle on our
 			//cavas of dimension widthxheight
-			for(int i = 0; i < ExampleGridWorld.this.map.length; i++){
-				for(int j = 0; j < ExampleGridWorld.this.map[0].length; j++){
+			for(int i = 0; i < ExampleOOGridWorld.this.map.length; i++){
+				for(int j = 0; j < ExampleOOGridWorld.this.map[0].length; j++){
 
 					//is there a wall here?
-					if(ExampleGridWorld.this.map[i][j] == 1){
+					if(ExampleOOGridWorld.this.map[i][j] == 1){
 
 						//left coordinate of cell on our canvas
 						float rx = i*width;
@@ -322,23 +305,23 @@ public class ExampleGridWorld implements DomainGenerator{
 
 	public class AgentPainter implements ObjectPainter {
 
-		public void paintObject(Graphics2D g2, State s, ObjectInstance ob,
+		public void paintObject(Graphics2D g2, OOState s, ObjectInstance ob,
 								float cWidth, float cHeight) {
 
 			//agent will be filled in gray
 			g2.setColor(Color.GRAY);
 
 			//set up floats for the width and height of our domain
-			float fWidth = ExampleGridWorld.this.map.length;
-			float fHeight = ExampleGridWorld.this.map[0].length;
+			float fWidth = ExampleOOGridWorld.this.map.length;
+			float fHeight = ExampleOOGridWorld.this.map[0].length;
 
 			//determine the width of a single cell on our canvas
 			//such that the whole map can be painted
 			float width = cWidth / fWidth;
 			float height = cHeight / fHeight;
 
-			int ax = ob.getIntValForAttribute(ATT_X);
-			int ay = ob.getIntValForAttribute(ATT_Y);
+			int ax = (Integer)ob.get(VAR_X);
+			int ay = (Integer)ob.get(VAR_Y);
 
 			//left coordinate of cell on our canvas
 			float rx = ax*width;
@@ -360,23 +343,23 @@ public class ExampleGridWorld implements DomainGenerator{
 
 	public class LocationPainter implements ObjectPainter {
 
-		public void paintObject(Graphics2D g2, State s, ObjectInstance ob,
+		public void paintObject(Graphics2D g2, OOState s, ObjectInstance ob,
 								float cWidth, float cHeight) {
 
 			//agent will be filled in blue
 			g2.setColor(Color.BLUE);
 
 			//set up floats for the width and height of our domain
-			float fWidth = ExampleGridWorld.this.map.length;
-			float fHeight = ExampleGridWorld.this.map[0].length;
+			float fWidth = ExampleOOGridWorld.this.map.length;
+			float fHeight = ExampleOOGridWorld.this.map[0].length;
 
 			//determine the width of a single cell on our canvas
 			//such that the whole map can be painted
 			float width = cWidth / fWidth;
 			float height = cHeight / fHeight;
 
-			int ax = ob.getIntValForAttribute(ATT_X);
-			int ay = ob.getIntValForAttribute(ATT_Y);
+			int ax = (Integer)ob.get(VAR_X);
+			int ay = (Integer)ob.get(VAR_Y);
 
 			//left coordinate of cell on our canvas
 			float rx = ax*width;
@@ -397,74 +380,15 @@ public class ExampleGridWorld implements DomainGenerator{
 	}
 
 
-	public static class ExampleRF implements RewardFunction {
-
-		int goalX;
-		int goalY;
-
-		public ExampleRF(int goalX, int goalY){
-			this.goalX = goalX;
-			this.goalY = goalY;
-		}
-
-		public double reward(State s, GroundedAction a, State sprime) {
-
-			//get location of agent in next state
-			ObjectInstance agent = sprime.getFirstObjectOfClass(CLASS_AGENT);
-			int ax = agent.getIntValForAttribute(ATT_X);
-			int ay = agent.getIntValForAttribute(ATT_Y);
-
-			//are they at goal location?
-			if(ax == this.goalX && ay == this.goalY){
-				return 100.;
-			}
-
-			return -1;
-		}
-
-
-	}
-
-	public static class ExampleTF implements TerminalFunction {
-
-		int goalX;
-		int goalY;
-
-		public ExampleTF(int goalX, int goalY){
-			this.goalX = goalX;
-			this.goalY = goalY;
-		}
-
-		public boolean isTerminal(State s) {
-
-			//get location of agent in next state
-			ObjectInstance agent = s.getFirstObjectOfClass(CLASS_AGENT);
-			int ax = agent.getIntValForAttribute(ATT_X);
-			int ay = agent.getIntValForAttribute(ATT_Y);
-
-			//are they at goal location?
-			if(ax == this.goalX && ay == this.goalY){
-				return true;
-			}
-
-			return false;
-		}
-
-
-
-	}
-
-
-
 	public static void main(String [] args){
 
-		ExampleGridWorld gen = new ExampleGridWorld();
-		Domain domain = gen.generateDomain();
+		ExampleOOGridWorld gen = new ExampleOOGridWorld();
+		OOSADomain domain = gen.generateDomain();
 
-		State initialState = ExampleGridWorld.getExampleState(domain);
+		State initialState = new GenericOOState(new ExGridAgent(0, 0), new EXGridLocation(10, 10, "loc0"));
 
-		RewardFunction rf = new ExampleGridWorld.ExampleRF(10, 10);
-		TerminalFunction tf = new ExampleGridWorld.ExampleTF(10, 10);
+		SingleGoalPFRF rf = new SingleGoalPFRF(domain.getPropFunction(PF_AT), 100, -1);
+		TerminalFunction tf = new SinglePFTF(domain.getPropFunction(PF_AT));
 
 		SimulatedEnvironment env = new SimulatedEnvironment(domain, rf, tf, initialState);
 
@@ -484,5 +408,6 @@ public class ExampleGridWorld implements DomainGenerator{
 
 
 	}
+
 
 }

@@ -7,16 +7,20 @@ import burlap.behavior.singleagent.learning.LearningAgent;
 import burlap.behavior.singleagent.learning.LearningAgentFactory;
 import burlap.behavior.singleagent.learning.tdmethods.QLearning;
 import burlap.domain.singleagent.gridworld.GridWorldDomain;
-import burlap.oomdp.auxiliary.common.ConstantStateGenerator;
-import burlap.oomdp.auxiliary.common.SinglePFTF;
-import burlap.oomdp.auxiliary.stateconditiontest.TFGoalCondition;
-import burlap.oomdp.core.Domain;
-import burlap.oomdp.core.TerminalFunction;
-import burlap.oomdp.core.states.State;
-import burlap.oomdp.singleagent.RewardFunction;
-import burlap.oomdp.singleagent.common.GoalBasedRF;
-import burlap.oomdp.singleagent.environment.SimulatedEnvironment;
-import burlap.oomdp.statehashing.SimpleHashableStateFactory;
+import burlap.domain.singleagent.gridworld.state.GridAgent;
+import burlap.domain.singleagent.gridworld.state.GridLocation;
+import burlap.domain.singleagent.gridworld.state.GridWorldState;
+import burlap.mdp.auxiliary.common.ConstantStateGenerator;
+import burlap.mdp.auxiliary.common.SinglePFTF;
+import burlap.mdp.auxiliary.stateconditiontest.TFGoalCondition;
+import burlap.mdp.core.TerminalFunction;
+import burlap.mdp.singleagent.RewardFunction;
+import burlap.mdp.singleagent.common.GoalBasedRF;
+import burlap.mdp.singleagent.environment.SimulatedEnvironment;
+import burlap.mdp.singleagent.oo.OOSADomain;
+import burlap.mdp.statehashing.SimpleHashableStateFactory;
+
+
 
 /**
  * @author James MacGlashan.
@@ -28,16 +32,14 @@ public class PlotTest {
 		GridWorldDomain gw = new GridWorldDomain(11,11); //11x11 grid world
 		gw.setMapToFourRooms(); //four rooms layout
 		gw.setProbSucceedTransitionDynamics(0.8); //stochastic transitions with 0.8 success rate
-		final Domain domain = gw.generateDomain(); //generate the grid world domain
+		final OOSADomain domain = gw.generateDomain(); //generate the grid world domain
 
 		//setup initial state
-		State s = GridWorldDomain.getOneAgentOneLocationState(domain);
-		GridWorldDomain.setAgent(s, 0, 0);
-		GridWorldDomain.setLocation(s, 0, 10, 10);
+		GridWorldState s = new GridWorldState(new GridAgent(0, 0), new GridLocation(10, 10, "loc0"));
 
 		//ends when the agent reaches a location
 		final TerminalFunction tf = new SinglePFTF(domain.
-				getPropFunction(GridWorldDomain.PFATLOCATION));
+				getPropFunction(GridWorldDomain.PF_AT_LOCATION));
 
 		//reward function definition
 		final RewardFunction rf = new GoalBasedRF(new TFGoalCondition(tf), 5., -0.1);

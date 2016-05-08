@@ -13,19 +13,22 @@ import burlap.behavior.valuefunction.ValueFunctionInitialization;
 import burlap.domain.singleagent.gridworld.GridWorldDomain;
 import burlap.domain.singleagent.gridworld.GridWorldTerminalFunction;
 import burlap.domain.singleagent.gridworld.GridWorldVisualizer;
-import burlap.oomdp.core.AbstractGroundedAction;
-import burlap.oomdp.core.Domain;
-import burlap.oomdp.core.TerminalFunction;
-import burlap.oomdp.core.TransitionProbability;
-import burlap.oomdp.core.states.State;
-import burlap.oomdp.singleagent.GroundedAction;
-import burlap.oomdp.singleagent.RewardFunction;
-import burlap.oomdp.singleagent.SADomain;
-import burlap.oomdp.singleagent.common.UniformCostRF;
-import burlap.oomdp.statehashing.HashableState;
-import burlap.oomdp.statehashing.HashableStateFactory;
-import burlap.oomdp.statehashing.SimpleHashableStateFactory;
-import burlap.oomdp.visualizer.Visualizer;
+import burlap.domain.singleagent.gridworld.state.GridAgent;
+import burlap.domain.singleagent.gridworld.state.GridLocation;
+import burlap.domain.singleagent.gridworld.state.GridWorldState;
+import burlap.mdp.core.AbstractGroundedAction;
+import burlap.mdp.core.Domain;
+import burlap.mdp.core.TerminalFunction;
+import burlap.mdp.core.TransitionProbability;
+import burlap.mdp.core.state.State;
+import burlap.mdp.singleagent.GroundedAction;
+import burlap.mdp.singleagent.RewardFunction;
+import burlap.mdp.singleagent.SADomain;
+import burlap.mdp.singleagent.common.UniformCostRF;
+import burlap.mdp.statehashing.HashableState;
+import burlap.mdp.statehashing.HashableStateFactory;
+import burlap.mdp.statehashing.SimpleHashableStateFactory;
+import burlap.mdp.visualizer.Visualizer;
 
 import java.util.*;
 
@@ -159,8 +162,7 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 		Domain domain = gwd.generateDomain();
 
 		//get initial state with agent in 0,0
-		State s = GridWorldDomain.getOneAgentNoLocationState(domain);
-		GridWorldDomain.setAgent(s, 0, 0);
+		State s = new GridWorldState(new GridAgent(0, 0), new GridLocation(10, 10, "loc0"));
 
 		//all transitions return -1
 		RewardFunction rf = new UniformCostRF();

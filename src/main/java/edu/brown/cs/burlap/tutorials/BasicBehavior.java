@@ -28,22 +28,25 @@ import burlap.behavior.valuefunction.QFunction;
 import burlap.behavior.valuefunction.ValueFunction;
 import burlap.domain.singleagent.gridworld.GridWorldDomain;
 import burlap.domain.singleagent.gridworld.GridWorldVisualizer;
-import burlap.oomdp.auxiliary.common.SinglePFTF;
-import burlap.oomdp.auxiliary.stateconditiontest.StateConditionTest;
-import burlap.oomdp.auxiliary.stateconditiontest.TFGoalCondition;
-import burlap.oomdp.core.Domain;
-import burlap.oomdp.core.TerminalFunction;
-import burlap.oomdp.core.objects.ObjectInstance;
-import burlap.oomdp.core.states.State;
-import burlap.oomdp.singleagent.RewardFunction;
-import burlap.oomdp.singleagent.SADomain;
-import burlap.oomdp.singleagent.common.GoalBasedRF;
-import burlap.oomdp.singleagent.common.UniformCostRF;
-import burlap.oomdp.singleagent.environment.Environment;
-import burlap.oomdp.singleagent.environment.SimulatedEnvironment;
-import burlap.oomdp.statehashing.HashableStateFactory;
-import burlap.oomdp.statehashing.SimpleHashableStateFactory;
-import burlap.oomdp.visualizer.Visualizer;
+import burlap.domain.singleagent.gridworld.state.GridAgent;
+import burlap.domain.singleagent.gridworld.state.GridLocation;
+import burlap.domain.singleagent.gridworld.state.GridWorldState;
+import burlap.mdp.auxiliary.common.SinglePFTF;
+import burlap.mdp.auxiliary.stateconditiontest.StateConditionTest;
+import burlap.mdp.auxiliary.stateconditiontest.TFGoalCondition;
+import burlap.mdp.core.TerminalFunction;
+import burlap.mdp.core.state.State;
+import burlap.mdp.core.state.vardomain.VariableDomain;
+import burlap.mdp.singleagent.RewardFunction;
+import burlap.mdp.singleagent.SADomain;
+import burlap.mdp.singleagent.common.GoalBasedRF;
+import burlap.mdp.singleagent.common.UniformCostRF;
+import burlap.mdp.singleagent.environment.Environment;
+import burlap.mdp.singleagent.environment.SimulatedEnvironment;
+import burlap.mdp.singleagent.oo.OOSADomain;
+import burlap.mdp.statehashing.HashableStateFactory;
+import burlap.mdp.statehashing.SimpleHashableStateFactory;
+import burlap.mdp.visualizer.Visualizer;
 
 import java.awt.*;
 import java.util.List;
@@ -54,7 +57,7 @@ import java.util.List;
 public class BasicBehavior {
 
 	GridWorldDomain gwdg;
-	Domain domain;
+	OOSADomain domain;
 	RewardFunction rf;
 	TerminalFunction tf;
 	StateConditionTest goalCondition;
@@ -70,12 +73,10 @@ public class BasicBehavior {
 
 
 		rf = new UniformCostRF();
-		tf = new SinglePFTF(domain.getPropFunction(GridWorldDomain.PFATLOCATION));
+		tf = new SinglePFTF(domain.getPropFunction(GridWorldDomain.PF_AT_LOCATION));
 		goalCondition = new TFGoalCondition(tf);
 
-		initialState = GridWorldDomain.getOneAgentNLocationState(domain, 1);
-		GridWorldDomain.setAgent(initialState, 0, 0);
-		GridWorldDomain.setLocation(initialState, 0, 10, 10);
+		initialState = new GridWorldState(new GridAgent(0, 0), new GridLocation(10, 10, "loc0"));
 
 		hashingFactory = new SimpleHashableStateFactory();
 
@@ -116,16 +117,9 @@ public class BasicBehavior {
 
 			public double h(State s) {
 
-				ObjectInstance agent = s.getFirstObjectOfClass(GridWorldDomain.CLASSAGENT);
-				ObjectInstance location = s.getFirstObjectOfClass(GridWorldDomain.CLASSLOCATION);
-
-				int ax = agent.getIntValForAttribute(GridWorldDomain.ATTX);
-				int ay = agent.getIntValForAttribute(GridWorldDomain.ATTY);
-
-				int lx = location.getIntValForAttribute(GridWorldDomain.ATTX);
-				int ly = location.getIntValForAttribute(GridWorldDomain.ATTY);
-
-				double mdist = Math.abs(ax-lx) + Math.abs(ay-ly);
+				GridAgent a = ((GridWorldState)s).agent;
+				GridLocation l = ((GridWorldState)s).locations.get(0);
+				double mdist = Math.abs(a.x-l.x) + Math.abs(a.y-l.y);
 
 				return -mdist;
 			}
@@ -191,7 +185,7 @@ public class BasicBehavior {
 	public void simpleValueFunctionVis(ValueFunction valueFunction, Policy p){
 
 		List<State> allStates = StateReachability.getReachableStates(initialState, (SADomain)domain, hashingFactory);
-		ValueFunctionVisualizerGUI gui = GridWorldDomain.getGridWorldValueFunctionVisualization(allStates, valueFunction, p);
+		ValueFunctionVisualizerGUI gui = GridWorldDomain.getGridWorldValueFunctionVisualization(allStates, 11, 11, valueFunction, p);
 		gui.initGUI();
 
 	}
@@ -207,9 +201,7 @@ public class BasicBehavior {
 
 		//define a 2D painter of state values, specifying which attributes correspond to the x and y coordinates of the canvas
 		StateValuePainter2D svp = new StateValuePainter2D(rb);
-		svp.setXYAttByObjectClass(GridWorldDomain.CLASSAGENT, GridWorldDomain.ATTX,
-				GridWorldDomain.CLASSAGENT, GridWorldDomain.ATTY);
-
+		svp.setXYKeys("agent:x", "agent:y", new VariableDomain(0, 11), new VariableDomain(0, 11), 11, 11);
 
 		//create our ValueFunctionVisualizer that paints for all states
 		//using the ValueFunction source and the state value painter we defined
@@ -217,12 +209,12 @@ public class BasicBehavior {
 
 		//define a policy painter that uses arrow glyphs for each of the grid world actions
 		PolicyGlyphPainter2D spp = new PolicyGlyphPainter2D();
-		spp.setXYAttByObjectClass(GridWorldDomain.CLASSAGENT, GridWorldDomain.ATTX,
-				GridWorldDomain.CLASSAGENT, GridWorldDomain.ATTY);
-		spp.setActionNameGlyphPainter(GridWorldDomain.ACTIONNORTH, new ArrowActionGlyph(0));
-		spp.setActionNameGlyphPainter(GridWorldDomain.ACTIONSOUTH, new ArrowActionGlyph(1));
-		spp.setActionNameGlyphPainter(GridWorldDomain.ACTIONEAST, new ArrowActionGlyph(2));
-		spp.setActionNameGlyphPainter(GridWorldDomain.ACTIONWEST, new ArrowActionGlyph(3));
+		spp.setXYKeys("agent:x", "agent:y", new VariableDomain(0, 11), new VariableDomain(0, 11), 11, 11);
+
+		spp.setActionNameGlyphPainter(GridWorldDomain.ACTION_NORTH, new ArrowActionGlyph(0));
+		spp.setActionNameGlyphPainter(GridWorldDomain.ACTION_SOUTH, new ArrowActionGlyph(1));
+		spp.setActionNameGlyphPainter(GridWorldDomain.ACTION_EAST, new ArrowActionGlyph(2));
+		spp.setActionNameGlyphPainter(GridWorldDomain.ACTION_WEST, new ArrowActionGlyph(3));
 		spp.setRenderStyle(PolicyGlyphPainter2D.PolicyGlyphRenderStyle.DISTSCALED);
 
 

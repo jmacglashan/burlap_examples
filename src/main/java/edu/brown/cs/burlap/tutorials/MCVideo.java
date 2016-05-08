@@ -4,20 +4,23 @@ import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.learning.lspi.LSPI;
 import burlap.behavior.singleagent.learning.lspi.SARSCollector;
 import burlap.behavior.singleagent.learning.lspi.SARSData;
-import burlap.behavior.singleagent.vfa.common.ConcatenatedObjectFeatureVectorGenerator;
+import burlap.behavior.singleagent.vfa.common.NormalizedVariablesVectorGenerator;
 import burlap.behavior.singleagent.vfa.fourier.FourierBasis;
 import burlap.domain.singleagent.mountaincar.MCRandomStateGenerator;
+import burlap.domain.singleagent.mountaincar.MCState;
 import burlap.domain.singleagent.mountaincar.MountainCar;
 import burlap.domain.singleagent.mountaincar.MountainCarVisualizer;
-import burlap.oomdp.auxiliary.StateGenerator;
-import burlap.oomdp.core.Domain;
-import burlap.oomdp.core.TerminalFunction;
-import burlap.oomdp.singleagent.RewardFunction;
-import burlap.oomdp.singleagent.common.GoalBasedRF;
-import burlap.oomdp.singleagent.common.VisualActionObserver;
-import burlap.oomdp.singleagent.environment.EnvironmentServer;
-import burlap.oomdp.singleagent.environment.SimulatedEnvironment;
-import burlap.oomdp.visualizer.Visualizer;
+import burlap.mdp.auxiliary.StateGenerator;
+import burlap.mdp.core.Domain;
+import burlap.mdp.core.TerminalFunction;
+import burlap.mdp.core.state.vardomain.VariableDomain;
+import burlap.mdp.singleagent.RewardFunction;
+import burlap.mdp.singleagent.common.GoalBasedRF;
+import burlap.mdp.singleagent.common.VisualActionObserver;
+import burlap.mdp.singleagent.environment.EnvironmentServer;
+import burlap.mdp.singleagent.environment.SimulatedEnvironment;
+import burlap.mdp.visualizer.Visualizer;
+
 
 /**
  * @author James MacGlashan.
@@ -31,12 +34,13 @@ public class MCVideo {
 		TerminalFunction tf = new MountainCar.ClassicMCTF();
 		RewardFunction rf = new GoalBasedRF(tf, 100);
 
-		StateGenerator rStateGen = new MCRandomStateGenerator(domain);
+		StateGenerator rStateGen = new MCRandomStateGenerator(mcGen.physParams);
 		SARSCollector collector = new SARSCollector.UniformRandomSARSCollector(domain);
 		SARSData dataset = collector.collectNInstances(rStateGen, rf, 5000, 20, tf, null);
 
-		ConcatenatedObjectFeatureVectorGenerator fvGen = new ConcatenatedObjectFeatureVectorGenerator(true,
-				MountainCar.CLASSAGENT);
+		NormalizedVariablesVectorGenerator fvGen = new NormalizedVariablesVectorGenerator()
+				.variableDomain("x", new VariableDomain(mcGen.physParams.xmin, mcGen.physParams.xmax))
+				.variableDomain("v", new VariableDomain(mcGen.physParams.vmin, mcGen.physParams.vmax));
 		FourierBasis fb = new FourierBasis(fvGen, 4);
 
 		LSPI lspi = new LSPI(domain, 0.99, fb, dataset);
@@ -47,7 +51,7 @@ public class MCVideo {
 		vob.initGUI();
 
 		SimulatedEnvironment env = new SimulatedEnvironment(domain, rf, tf,
-				MountainCar.getCleanState(domain, mcGen.physParams));
+				new MCState());
 		EnvironmentServer envServ = new EnvironmentServer(env, vob);
 
 		for(int i = 0; i < 100; i++){
