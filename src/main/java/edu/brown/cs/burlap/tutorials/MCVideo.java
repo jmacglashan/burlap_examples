@@ -51,7 +51,7 @@ public class MCVideo {
 		vob.initGUI();
 
 		SimulatedEnvironment env = new SimulatedEnvironment(domain, rf, tf,
-				new MCState());
+				new MCState(mcGen.physParams.valleyPos(), 0));
 		EnvironmentServer envServ = new EnvironmentServer(env, vob);
 
 		for(int i = 0; i < 100; i++){
