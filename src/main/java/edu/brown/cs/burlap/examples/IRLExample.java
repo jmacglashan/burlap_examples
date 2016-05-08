@@ -15,19 +15,23 @@ import burlap.behavior.valuefunction.QFunction;
 import burlap.debugtools.RandomFactory;
 import burlap.domain.singleagent.gridworld.GridWorldDomain;
 import burlap.domain.singleagent.gridworld.GridWorldVisualizer;
-import burlap.oomdp.auxiliary.StateGenerator;
-import burlap.oomdp.auxiliary.common.NullTermination;
-import burlap.oomdp.core.Domain;
-import burlap.oomdp.core.GroundedProp;
-import burlap.oomdp.core.PropositionalFunction;
-import burlap.oomdp.core.objects.ObjectInstance;
-import burlap.oomdp.core.states.State;
-import burlap.oomdp.singleagent.SADomain;
-import burlap.oomdp.singleagent.common.NullRewardFunction;
-import burlap.oomdp.singleagent.environment.SimulatedEnvironment;
-import burlap.oomdp.singleagent.explorer.VisualExplorer;
-import burlap.oomdp.statehashing.SimpleHashableStateFactory;
-import burlap.oomdp.visualizer.Visualizer;
+import burlap.domain.singleagent.gridworld.state.GridAgent;
+import burlap.domain.singleagent.gridworld.state.GridLocation;
+import burlap.domain.singleagent.gridworld.state.GridWorldState;
+import burlap.mdp.auxiliary.StateGenerator;
+import burlap.mdp.auxiliary.common.NullTermination;
+import burlap.mdp.core.oo.OODomain;
+import burlap.mdp.core.oo.propositional.GroundedProp;
+import burlap.mdp.core.oo.propositional.PropositionalFunction;
+import burlap.mdp.core.oo.state.OOState;
+import burlap.mdp.core.state.State;
+import burlap.mdp.singleagent.SADomain;
+import burlap.mdp.singleagent.common.NullRewardFunction;
+import burlap.mdp.singleagent.environment.SimulatedEnvironment;
+import burlap.mdp.singleagent.explorer.VisualExplorer;
+import burlap.mdp.singleagent.oo.OOSADomain;
+import burlap.mdp.statehashing.SimpleHashableStateFactory;
+import burlap.mdp.visualizer.Visualizer;
 
 import java.util.List;
 
@@ -43,7 +47,7 @@ import java.util.List;
 public class IRLExample {
 
 	GridWorldDomain gwd;
-	Domain domain;
+	OOSADomain domain;
 	StateGenerator sg;
 	Visualizer v;
 
@@ -74,10 +78,10 @@ public class IRLExample {
 	public void launchExplorer(){
 		SimulatedEnvironment env = new SimulatedEnvironment(this.domain, new NullRewardFunction(), new NullTermination(), this.sg);
 		VisualExplorer exp = new VisualExplorer(this.domain, env, this.v, 800, 800);
-		exp.addKeyAction("w", GridWorldDomain.ACTIONNORTH);
-		exp.addKeyAction("s", GridWorldDomain.ACTIONSOUTH);
-		exp.addKeyAction("d", GridWorldDomain.ACTIONEAST);
-		exp.addKeyAction("a", GridWorldDomain.ACTIONWEST);
+		exp.addKeyAction("w", GridWorldDomain.ACTION_NORTH);
+		exp.addKeyAction("s", GridWorldDomain.ACTION_SOUTH);
+		exp.addKeyAction("d", GridWorldDomain.ACTION_EAST);
+		exp.addKeyAction("a", GridWorldDomain.ACTION_WEST);
 
 		//exp.enableEpisodeRecording("r", "f", "irlDemo");
 
@@ -138,8 +142,11 @@ public class IRLExample {
 		//learned rather than the value function for it.
 		ValueFunctionVisualizerGUI gui = GridWorldDomain.getGridWorldValueFunctionVisualization(
 				allStates,
+				11,
+				11,
 				new RewardValueProjection(rf),
-				new GreedyQPolicy((QFunction)request.getPlanner()));
+				new GreedyQPolicy((QFunction)request.getPlanner())
+		);
 
 
 		gui.initGUI();
@@ -154,21 +161,19 @@ public class IRLExample {
 	 */
 	protected State basicState(){
 
-		State s = GridWorldDomain.getOneAgentNLocationState(this.domain, 9);
-		GridWorldDomain.setAgent(s, 0, 0);
+		GridWorldState s = new GridWorldState(
+				new GridAgent(0, 0),
+				new GridLocation(0, 0, 1, "loc0"),
+				new GridLocation(0, 4, 2, "loc1"),
+				new GridLocation(4, 4, 3, "loc2"),
+				new GridLocation(4, 0, 4, "loc3"),
 
-		//goals
-		GridWorldDomain.setLocation(s, 0, 0, 0, 1);
-		GridWorldDomain.setLocation(s, 1, 0, 4, 2);
-		GridWorldDomain.setLocation(s, 2, 4, 4, 3);
-		GridWorldDomain.setLocation(s, 3, 4, 0, 4);
-
-		GridWorldDomain.setLocation(s, 4, 1, 0, 0);
-		GridWorldDomain.setLocation(s, 5, 1, 2, 0);
-		GridWorldDomain.setLocation(s, 6, 1, 4, 0);
-
-		GridWorldDomain.setLocation(s, 7, 3, 1, 0);
-		GridWorldDomain.setLocation(s, 8, 3, 3, 0);
+				new GridLocation(1, 0, 0, "loc4"),
+				new GridLocation(1, 2, 0, "loc5"),
+				new GridLocation(1, 4, 0, "loc6"),
+				new GridLocation(3, 1, 0, "loc7"),
+				new GridLocation(3, 3, 0, "loc8")
+		);
 
 		return s;
 	}
@@ -176,7 +181,7 @@ public class IRLExample {
 	/**
 	 * State generator that produces initial agent states somewhere on the left side of the grid.
 	 */
-	public static class LeftSideGen implements StateGenerator{
+	public static class LeftSideGen implements StateGenerator {
 
 
 		protected int height;
@@ -196,10 +201,10 @@ public class IRLExample {
 
 		public State generateState() {
 
-			State s = this.sourceState.copy();
+			GridWorldState s = (GridWorldState)this.sourceState.copy();
 
 			int h = RandomFactory.getDefault().nextInt(this.height);
-			GridWorldDomain.setAgent(s, 0, h);
+			s.touchAgent().y = h;
 
 			return s;
 		}
@@ -216,9 +221,9 @@ public class IRLExample {
 		PropositionalFunction inLocaitonPF;
 
 
-		public LocationFV(Domain domain, int numLocations){
+		public LocationFV(OODomain domain, int numLocations){
 			this.numLocations = numLocations;
-			this.inLocaitonPF = domain.getPropFunction(GridWorldDomain.PFATLOCATION);
+			this.inLocaitonPF = domain.getPropFunction(GridWorldDomain.PF_AT_LOCATION);
 		}
 
 
@@ -227,7 +232,7 @@ public class IRLExample {
 
 			double [] fv = new double[this.numLocations];
 
-			int aL = this.getActiveLocationVal(s);
+			int aL = this.getActiveLocationVal((OOState)s);
 			if(aL != -1){
 				fv[aL] = 1.;
 			}
@@ -236,14 +241,13 @@ public class IRLExample {
 		}
 
 
-		protected int getActiveLocationVal(State s){
+		protected int getActiveLocationVal(OOState s){
 
 			List<GroundedProp> gps = this.inLocaitonPF.getAllGroundedPropsForState(s);
 			for(GroundedProp gp : gps){
 				if(gp.isTrue(s)){
-					ObjectInstance l = s.getObject(gp.params[1]);
-					int lt = l.getIntValForAttribute(GridWorldDomain.ATTLOCTYPE);
-					return lt;
+					GridLocation l = (GridLocation)s.object(gp.params[1]);
+					return l.type;
 				}
 			}
 

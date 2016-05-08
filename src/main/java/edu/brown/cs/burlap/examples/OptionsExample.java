@@ -17,16 +17,16 @@ import burlap.behavior.valuefunction.ValueFunctionInitialization;
 import burlap.domain.singleagent.gridworld.GridWorldDomain;
 import burlap.domain.singleagent.gridworld.GridWorldTerminalFunction;
 import burlap.domain.singleagent.gridworld.GridWorldVisualizer;
-import burlap.oomdp.auxiliary.stateconditiontest.StateConditionTest;
-import burlap.oomdp.core.Domain;
-import burlap.oomdp.core.TerminalFunction;
-import burlap.oomdp.core.objects.ObjectInstance;
-import burlap.oomdp.core.states.State;
-import burlap.oomdp.singleagent.RewardFunction;
-import burlap.oomdp.singleagent.common.UniformCostRF;
-import burlap.oomdp.singleagent.environment.SimulatedEnvironment;
-import burlap.oomdp.statehashing.SimpleHashableStateFactory;
-import burlap.oomdp.visualizer.Visualizer;
+import burlap.domain.singleagent.gridworld.state.GridWorldState;
+import burlap.mdp.auxiliary.stateconditiontest.StateConditionTest;
+import burlap.mdp.core.Domain;
+import burlap.mdp.core.TerminalFunction;
+import burlap.mdp.core.state.State;
+import burlap.mdp.singleagent.RewardFunction;
+import burlap.mdp.singleagent.common.UniformCostRF;
+import burlap.mdp.singleagent.environment.SimulatedEnvironment;
+import burlap.mdp.statehashing.SimpleHashableStateFactory;
+import burlap.mdp.visualizer.Visualizer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,17 +71,17 @@ public class OptionsExample {
 
 		List<EpisodeAnalysis> episodes = new ArrayList<EpisodeAnalysis>();
 
-		episodes.add(optionExecuteResult(swToNorth, GridWorldDomain.getOneAgentNoLocationState(domain, 0, 0)));
-		episodes.add(optionExecuteResult(swToEast, GridWorldDomain.getOneAgentNoLocationState(domain, 0, 0)));
+		episodes.add(optionExecuteResult(swToNorth, new GridWorldState(0, 0)));
+		episodes.add(optionExecuteResult(swToEast, new GridWorldState(0, 0)));
 
-		episodes.add(optionExecuteResult(seToWest, GridWorldDomain.getOneAgentNoLocationState(domain, 10, 0)));
-		episodes.add(optionExecuteResult(seToNorth, GridWorldDomain.getOneAgentNoLocationState(domain, 10, 0)));
+		episodes.add(optionExecuteResult(seToWest, new GridWorldState(10, 0)));
+		episodes.add(optionExecuteResult(seToNorth, new GridWorldState(10, 0)));
 
-		episodes.add(optionExecuteResult(neToSouth, GridWorldDomain.getOneAgentNoLocationState(domain, 10, 10)));
-		episodes.add(optionExecuteResult(neToWest, GridWorldDomain.getOneAgentNoLocationState(domain, 10, 10)));
+		episodes.add(optionExecuteResult(neToSouth, new GridWorldState(10, 10)));
+		episodes.add(optionExecuteResult(neToWest, new GridWorldState(10, 10)));
 
-		episodes.add(optionExecuteResult(nwToEast, GridWorldDomain.getOneAgentNoLocationState(domain, 0, 10)));
-		episodes.add(optionExecuteResult(nwToSouth, GridWorldDomain.getOneAgentNoLocationState(domain, 0, 10)));
+		episodes.add(optionExecuteResult(nwToEast, new GridWorldState(0, 10)));
+		episodes.add(optionExecuteResult(nwToSouth, new GridWorldState(0, 10)));
 
 
 		Visualizer v = GridWorldVisualizer.getVisualizer(gwd.getMap());
@@ -103,7 +103,7 @@ public class OptionsExample {
 		gwd.setMapToFourRooms();
 		//gwd.setProbSucceedTransitionDynamics(0.8);
 		final Domain domain = gwd.generateDomain();
-		State s = GridWorldDomain.getOneAgentNoLocationState(domain, 0, 0);
+		State s = new GridWorldState(0, 0);
 
 		RewardFunction rf = new UniformCostRF();
 		TerminalFunction tf = new GridWorldTerminalFunction(10, 10);
@@ -233,9 +233,8 @@ public class OptionsExample {
 		final StateConditionTest initiationConditions = new StateConditionTest() {
 
 			public boolean satisfies(State s) {
-				ObjectInstance agent = s.getFirstObjectOfClass(GridWorldDomain.CLASSAGENT);
-				int x = agent.getIntValForAttribute(GridWorldDomain.ATTX);
-				int y = agent.getIntValForAttribute(GridWorldDomain.ATTY);
+				int x = (Integer)s.get(GridWorldDomain.VAR_X);
+				int y = (Integer)s.get(GridWorldDomain.VAR_Y);
 
 				return x >= minX && x <= maxX && y>= minY && y <= maxY;
 			}
@@ -253,9 +252,8 @@ public class OptionsExample {
 		StateConditionTest goalCondition = new StateConditionTest() {
 
 			public boolean satisfies(State s) {
-				ObjectInstance agent = s.getFirstObjectOfClass(GridWorldDomain.CLASSAGENT);
-				int x = agent.getIntValForAttribute(GridWorldDomain.ATTX);
-				int y = agent.getIntValForAttribute(GridWorldDomain.ATTY);
+				int x = (Integer)s.get(GridWorldDomain.VAR_X);
+				int y = (Integer)s.get(GridWorldDomain.VAR_Y);
 				return x == doorx && y == doory;
 			}
 		};

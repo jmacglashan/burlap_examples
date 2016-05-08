@@ -16,15 +16,15 @@ import burlap.behavior.stochasticgames.solvers.CorrelatedEquilibriumSolver;
 import burlap.debugtools.DPrint;
 import burlap.domain.stochasticgames.gridgame.GGVisualizer;
 import burlap.domain.stochasticgames.gridgame.GridGame;
-import burlap.oomdp.core.TerminalFunction;
-import burlap.oomdp.core.states.State;
-import burlap.oomdp.statehashing.HashableStateFactory;
-import burlap.oomdp.statehashing.SimpleHashableStateFactory;
-import burlap.oomdp.stochasticgames.JointReward;
-import burlap.oomdp.stochasticgames.SGAgentType;
-import burlap.oomdp.stochasticgames.SGDomain;
-import burlap.oomdp.stochasticgames.World;
-import burlap.oomdp.visualizer.Visualizer;
+import burlap.mdp.core.TerminalFunction;
+import burlap.mdp.core.state.State;
+import burlap.mdp.statehashing.HashableStateFactory;
+import burlap.mdp.statehashing.SimpleHashableStateFactory;
+import burlap.mdp.stochasticgames.JointReward;
+import burlap.mdp.stochasticgames.SGAgentType;
+import burlap.mdp.stochasticgames.World;
+import burlap.mdp.stochasticgames.oo.OOSGDomain;
+import burlap.mdp.visualizer.Visualizer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,12 +42,12 @@ public class GridGameExample {
 
 		//grid game domain
 		GridGame gridGame = new GridGame();
-		final SGDomain domain = (SGDomain)gridGame.generateDomain();
+		final OOSGDomain domain = gridGame.generateDomain();
 
 		final HashableStateFactory hashingFactory = new SimpleHashableStateFactory();
 
 		//run the grid game version of prisoner's dilemma
-		final State s = GridGame.getPrisonersDilemmaInitialState(domain);
+		final State s = GridGame.getPrisonersDilemmaInitialState();
 
 		//define joint reward function and termination conditions for this game
 		JointReward rf = new GridGame.GGJointRewardFunction(domain, -1, 100, false);
@@ -90,11 +90,11 @@ public class GridGameExample {
 	public static void VICorrelatedTest(){
 
 		GridGame gridGame = new GridGame();
-		final SGDomain domain = (SGDomain)gridGame.generateDomain();
+		final OOSGDomain domain = gridGame.generateDomain();
 
 		final HashableStateFactory hashingFactory = new SimpleHashableStateFactory();
 
-		final State s = GridGame.getPrisonersDilemmaInitialState(domain);
+		final State s = GridGame.getPrisonersDilemmaInitialState();
 
 		JointReward rf = new GridGame.GGJointRewardFunction(domain, -1, 100, false);
 		TerminalFunction tf = new GridGame.GGTerminalFunction(domain);
@@ -131,11 +131,11 @@ public class GridGameExample {
 	public static void QLCoCoTest(){
 
 		GridGame gridGame = new GridGame();
-		final SGDomain domain = (SGDomain)gridGame.generateDomain();
+		final OOSGDomain domain = gridGame.generateDomain();
 
 		final HashableStateFactory hashingFactory = new SimpleHashableStateFactory();
 
-		final State s = GridGame.getPrisonersDilemmaInitialState(domain);
+		final State s = GridGame.getPrisonersDilemmaInitialState();
 		JointReward rf = new GridGame.GGJointRewardFunction(domain, -1, 100, false);
 		TerminalFunction tf = new GridGame.GGTerminalFunction(domain);
 		SGAgentType at = GridGame.getStandardGridGameAgentType(domain);
@@ -179,11 +179,11 @@ public class GridGameExample {
 	public static void saInterface(){
 
 		GridGame gridGame = new GridGame();
-		final SGDomain domain = (SGDomain)gridGame.generateDomain();
+		final OOSGDomain domain = gridGame.generateDomain();
 
 		final HashableStateFactory hashingFactory = new SimpleHashableStateFactory();
 
-		final State s = GridGame.getSimpleGameInitialState(domain);
+		final State s = GridGame.getSimpleGameInitialState();
 		JointReward rf = new GridGame.GGJointRewardFunction(domain, -1, 100, false);
 		TerminalFunction tf = new GridGame.GGTerminalFunction(domain);
 		SGAgentType at = GridGame.getStandardGridGameAgentType(domain);
