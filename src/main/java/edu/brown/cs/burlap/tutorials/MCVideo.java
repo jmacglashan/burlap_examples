@@ -1,11 +1,12 @@
 package edu.brown.cs.burlap.tutorials;
 
+import burlap.behavior.functionapproximation.dense.DenseCrossProductFeatures;
+import burlap.behavior.functionapproximation.dense.NormalizedVariableFeatures;
+import burlap.behavior.functionapproximation.dense.fourier.FourierBasis;
 import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.learning.lspi.LSPI;
 import burlap.behavior.singleagent.learning.lspi.SARSCollector;
 import burlap.behavior.singleagent.learning.lspi.SARSData;
-import burlap.behavior.singleagent.vfa.common.NormalizedVariablesVectorGenerator;
-import burlap.behavior.singleagent.vfa.fourier.FourierBasis;
 import burlap.domain.singleagent.mountaincar.MCRandomStateGenerator;
 import burlap.domain.singleagent.mountaincar.MCState;
 import burlap.domain.singleagent.mountaincar.MountainCar;
@@ -38,12 +39,12 @@ public class MCVideo {
 		SARSCollector collector = new SARSCollector.UniformRandomSARSCollector(domain);
 		SARSData dataset = collector.collectNInstances(rStateGen, rf, 5000, 20, tf, null);
 
-		NormalizedVariablesVectorGenerator fvGen = new NormalizedVariablesVectorGenerator()
+		NormalizedVariableFeatures features = new NormalizedVariableFeatures()
 				.variableDomain("x", new VariableDomain(mcGen.physParams.xmin, mcGen.physParams.xmax))
 				.variableDomain("v", new VariableDomain(mcGen.physParams.vmin, mcGen.physParams.vmax));
-		FourierBasis fb = new FourierBasis(fvGen, 4);
+		FourierBasis fb = new FourierBasis(features, 4);
 
-		LSPI lspi = new LSPI(domain, 0.99, fb, dataset);
+		LSPI lspi = new LSPI(domain, 0.99, new DenseCrossProductFeatures(fb, 3), dataset);
 		Policy p = lspi.runPolicyIteration(30, 1e-6);
 
 		Visualizer v = MountainCarVisualizer.getVisualizer(mcGen);

@@ -1,5 +1,6 @@
 package edu.brown.cs.burlap.examples;
 
+import burlap.behavior.functionapproximation.dense.DenseStateFeatures;
 import burlap.behavior.policy.GreedyQPolicy;
 import burlap.behavior.singleagent.EpisodeAnalysis;
 import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
@@ -10,7 +11,6 @@ import burlap.behavior.singleagent.learnfromdemo.mlirl.MLIRL;
 import burlap.behavior.singleagent.learnfromdemo.mlirl.MLIRLRequest;
 import burlap.behavior.singleagent.learnfromdemo.mlirl.commonrfs.LinearStateDifferentiableRF;
 import burlap.behavior.singleagent.learnfromdemo.mlirl.differentiableplanners.DifferentiableSparseSampling;
-import burlap.behavior.singleagent.vfa.StateToFeatureVectorGenerator;
 import burlap.behavior.valuefunction.QFunction;
 import burlap.debugtools.RandomFactory;
 import burlap.domain.singleagent.gridworld.GridWorldDomain;
@@ -104,11 +104,11 @@ public class IRLExample {
 	public void runIRL(String pathToEpisodes){
 
 		//create reward function features to use
-		LocationFV fvg = new LocationFV(this.domain, 5);
+		LocationFeatures features = new LocationFeatures(this.domain, 5);
 
 		//create a reward function that is linear with respect to those features and has small random
 		//parameter values to start
-		LinearStateDifferentiableRF rf = new LinearStateDifferentiableRF(fvg, 5);
+		LinearStateDifferentiableRF rf = new LinearStateDifferentiableRF(features, 5);
 		for(int i = 0; i < rf.numParameters(); i++){
 			rf.setParameter(i, RandomFactory.getMapped(0).nextDouble()*0.2 - 0.1);
 		}
@@ -215,20 +215,20 @@ public class IRLExample {
 	 * indicates whether the agent is in a cell of of a different type. All zeros indicates
 	 * that the agent is in an empty cell.
 	 */
-	public static class LocationFV implements StateToFeatureVectorGenerator {
+	public static class LocationFeatures implements DenseStateFeatures {
 
 		protected int numLocations;
 		PropositionalFunction inLocaitonPF;
 
 
-		public LocationFV(OODomain domain, int numLocations){
+		public LocationFeatures(OODomain domain, int numLocations){
 			this.numLocations = numLocations;
 			this.inLocaitonPF = domain.getPropFunction(GridWorldDomain.PF_AT_LOCATION);
 		}
 
 
-
-		public double[] generateFeatureVectorFrom(State s) {
+		@Override
+		public double[] features(State s) {
 
 			double [] fv = new double[this.numLocations];
 

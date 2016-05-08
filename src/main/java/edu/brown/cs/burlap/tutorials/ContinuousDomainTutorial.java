@@ -1,5 +1,17 @@
 package edu.brown.cs.burlap.tutorials;
 
+import burlap.behavior.functionapproximation.DifferentiableStateActionValue;
+import burlap.behavior.functionapproximation.dense.ConcatenatedObjectFeatures;
+import burlap.behavior.functionapproximation.dense.DenseCrossProductFeatures;
+import burlap.behavior.functionapproximation.dense.NormalizedVariableFeatures;
+import burlap.behavior.functionapproximation.dense.NumericVariableFeatures;
+import burlap.behavior.functionapproximation.dense.fourier.FourierBasis;
+import burlap.behavior.functionapproximation.dense.rbf.DistanceMetric;
+import burlap.behavior.functionapproximation.dense.rbf.RBFFeatures;
+import burlap.behavior.functionapproximation.dense.rbf.functions.GaussianRBF;
+import burlap.behavior.functionapproximation.dense.rbf.metrics.EuclideanDistance;
+import burlap.behavior.functionapproximation.sparse.tilecoding.TileCodingFeatures;
+import burlap.behavior.functionapproximation.sparse.tilecoding.TilingArrangement;
 import burlap.behavior.policy.GreedyQPolicy;
 import burlap.behavior.policy.Policy;
 import burlap.behavior.singleagent.EpisodeAnalysis;
@@ -10,17 +22,6 @@ import burlap.behavior.singleagent.learning.lspi.SARSCollector;
 import burlap.behavior.singleagent.learning.lspi.SARSData;
 import burlap.behavior.singleagent.learning.tdmethods.vfa.GradientDescentSarsaLam;
 import burlap.behavior.singleagent.planning.stochastic.sparsesampling.SparseSampling;
-import burlap.behavior.singleagent.vfa.DifferentiableStateActionValue;
-import burlap.behavior.singleagent.vfa.common.ConcatenatedObjectFeatureVectorGenerator;
-import burlap.behavior.singleagent.vfa.common.NormalizedVariablesVectorGenerator;
-import burlap.behavior.singleagent.vfa.common.VariablesVectorGenerator;
-import burlap.behavior.singleagent.vfa.fourier.FourierBasis;
-import burlap.behavior.singleagent.vfa.rbf.DistanceMetric;
-import burlap.behavior.singleagent.vfa.rbf.RBFFeatures;
-import burlap.behavior.singleagent.vfa.rbf.functions.GaussianRBF;
-import burlap.behavior.singleagent.vfa.rbf.metrics.EuclideanDistance;
-import burlap.behavior.singleagent.vfa.tilecoding.TileCodingFeatures;
-import burlap.behavior.singleagent.vfa.tilecoding.TilingArrangement;
 import burlap.domain.singleagent.cartpole.CartPoleVisualizer;
 import burlap.domain.singleagent.cartpole.InvertedPendulum;
 import burlap.domain.singleagent.cartpole.states.InvertedPendulumState;
@@ -72,13 +73,13 @@ public class ContinuousDomainTutorial {
 		SARSCollector collector = new SARSCollector.UniformRandomSARSCollector(domain);
 		SARSData dataset = collector.collectNInstances(rStateGen, rf, 5000, 20, tf, null);
 
-		NormalizedVariablesVectorGenerator featureVectorGenerator = new NormalizedVariablesVectorGenerator()
+		NormalizedVariableFeatures inputFeatures = new NormalizedVariableFeatures()
 				.variableDomain("x", new VariableDomain(mcGen.physParams.xmin, mcGen.physParams.xmax))
 				.variableDomain("v", new VariableDomain(mcGen.physParams.vmin, mcGen.physParams.vmax));
 
-		FourierBasis fb = new FourierBasis(featureVectorGenerator, 4);
+		FourierBasis fb = new FourierBasis(inputFeatures, 4);
 
-		LSPI lspi = new LSPI(domain, 0.99, fb, dataset);
+		LSPI lspi = new LSPI(domain, 0.99, new DenseCrossProductFeatures(fb, 3), dataset);
 		Policy p = lspi.runPolicyIteration(30, 1e-6);
 
 		Visualizer v = MountainCarVisualizer.getVisualizer(mcGen);
@@ -106,7 +107,7 @@ public class ContinuousDomainTutorial {
 		RewardFunction rf = new GoalBasedRF(tf, 100);
 		MCState s = new MCState(mcGen.physParams.valleyPos(), 0.);
 
-		NormalizedVariablesVectorGenerator normVariables = new NormalizedVariablesVectorGenerator()
+		NormalizedVariableFeatures inputFeatures = new NormalizedVariableFeatures()
 				.variableDomain("x", new VariableDomain(mcGen.physParams.xmin, mcGen.physParams.xmax))
 				.variableDomain("v", new VariableDomain(mcGen.physParams.vmin, mcGen.physParams.vmax));
 
@@ -114,7 +115,7 @@ public class ContinuousDomainTutorial {
 		SARSCollector collector = new SARSCollector.UniformRandomSARSCollector(domain);
 		SARSData dataset = collector.collectNInstances(rStateGen, rf, 5000, 20, tf, null);
 
-		RBFFeatures rbf = new RBFFeatures(normVariables, true);
+		RBFFeatures rbf = new RBFFeatures(inputFeatures, true);
 		FlatStateGridder gridder = new FlatStateGridder()
 				.gridDimension("x", mcGen.physParams.xmin, mcGen.physParams.xmax, 5)
 				.gridDimension("v", mcGen.physParams.vmin, mcGen.physParams.vmax, 5);
@@ -122,10 +123,10 @@ public class ContinuousDomainTutorial {
 		List<State> griddedStates = gridder.gridState(s);
 		DistanceMetric metric = new EuclideanDistance();
 		for(State g : griddedStates){
-			rbf.addRBF(new GaussianRBF(normVariables.generateFeatureVectorFrom(g), metric, 0.2));
+			rbf.addRBF(new GaussianRBF(inputFeatures.features(g), metric, 0.2));
 		}
 
-		LSPI lspi = new LSPI(domain, 0.99, rbf, dataset);
+		LSPI lspi = new LSPI(domain, 0.99, new DenseCrossProductFeatures(rbf, 3), dataset);
 		Policy p = lspi.runPolicyIteration(30, 1e-6);
 
 		Visualizer v = MountainCarVisualizer.getVisualizer(mcGen);
@@ -177,8 +178,8 @@ public class ContinuousDomainTutorial {
 
 		LLState s = new LLState(new LLAgent(5, 0, 0), new LLBlock.LLPad(75, 95, 0, 10, "pad"));
 
-		ConcatenatedObjectFeatureVectorGenerator stateVars = new ConcatenatedObjectFeatureVectorGenerator()
-				.addObjectVectorizion(LunarLanderDomain.CLASS_AGENT, new VariablesVectorGenerator());
+		ConcatenatedObjectFeatures inputFeatures = new ConcatenatedObjectFeatures()
+				.addObjectVectorizion(LunarLanderDomain.CLASS_AGENT, new NumericVariableFeatures());
 
 		int nTilings = 5;
 		double resolution = 10.;
@@ -190,8 +191,8 @@ public class ContinuousDomainTutorial {
 
 
 
-		TileCodingFeatures cmac = new TileCodingFeatures(stateVars);
-		cmac.addTilingsForAllDimensionsWithWidths(
+		TileCodingFeatures tilecoding = new TileCodingFeatures(inputFeatures);
+		tilecoding.addTilingsForAllDimensionsWithWidths(
 				new double []{xWidth, yWidth, velocityWidth, velocityWidth, angleWidth},
 				nTilings,
 				TilingArrangement.RANDOMJITTER);
@@ -200,7 +201,7 @@ public class ContinuousDomainTutorial {
 
 
 		double defaultQ = 0.5;
-		DifferentiableStateActionValue vfa = cmac.generateVFA(defaultQ/nTilings);
+		DifferentiableStateActionValue vfa = tilecoding.generateVFA(defaultQ/nTilings);
 		GradientDescentSarsaLam agent = new GradientDescentSarsaLam(domain, 0.99, vfa, 0.02, 0.5);
 
 		SimulatedEnvironment env = new SimulatedEnvironment(domain, rf, tf, s);
