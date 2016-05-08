@@ -175,7 +175,7 @@ public class ContinuousDomainTutorial {
 		RewardFunction rf = new LunarLanderRF(domain);
 		TerminalFunction tf = new LunarLanderTF(domain);
 
-		LLState s = new LLState(new LLAgent(0, 5, 0), new LLBlock.LLPad(75, 95, 0, 10, "pad"));
+		LLState s = new LLState(new LLAgent(5, 0, 0), new LLBlock.LLPad(75, 95, 0, 10, "pad"));
 
 		ConcatenatedObjectFeatureVectorGenerator stateVars = new ConcatenatedObjectFeatureVectorGenerator()
 				.addObjectVectorizion(LunarLanderDomain.CLASS_AGENT, new VariablesVectorGenerator());
