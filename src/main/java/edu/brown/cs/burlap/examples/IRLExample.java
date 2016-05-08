@@ -142,8 +142,8 @@ public class IRLExample {
 		//learned rather than the value function for it.
 		ValueFunctionVisualizerGUI gui = GridWorldDomain.getGridWorldValueFunctionVisualization(
 				allStates,
-				11,
-				11,
+				5,
+				5,
 				new RewardValueProjection(rf),
 				new GreedyQPolicy((QFunction)request.getPlanner())
 		);
