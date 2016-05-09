@@ -195,7 +195,7 @@ public class ContinuousDomainTutorial {
 		tilecoding.addTilingsForAllDimensionsWithWidths(
 				new double []{xWidth, yWidth, velocityWidth, velocityWidth, angleWidth},
 				nTilings,
-				TilingArrangement.RANDOMJITTER);
+				TilingArrangement.RANDOM_JITTER);
 
 
 
