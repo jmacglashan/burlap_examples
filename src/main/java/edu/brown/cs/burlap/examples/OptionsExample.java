@@ -92,7 +92,7 @@ public class OptionsExample {
 	}
 
 	public static EpisodeAnalysis optionExecuteResult(Option o, State s){
-		o.getAssociatedGroundedAction().executeIn(s);
+		o.associatedGroundedAction().sample(s);
 		return o.getLastExecutionResults();
 	}
 

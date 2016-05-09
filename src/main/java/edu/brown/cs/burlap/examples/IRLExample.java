@@ -218,14 +218,18 @@ public class IRLExample {
 	public static class LocationFeatures implements DenseStateFeatures {
 
 		protected int numLocations;
-		PropositionalFunction inLocaitonPF;
+		PropositionalFunction inLocationPF;
 
 
 		public LocationFeatures(OODomain domain, int numLocations){
 			this.numLocations = numLocations;
-			this.inLocaitonPF = domain.getPropFunction(GridWorldDomain.PF_AT_LOCATION);
+			this.inLocationPF = domain.getPropFunction(GridWorldDomain.PF_AT_LOCATION);
 		}
 
+		public LocationFeatures(int numLocations, PropositionalFunction inLocationPF) {
+			this.numLocations = numLocations;
+			this.inLocationPF = inLocationPF;
+		}
 
 		@Override
 		public double[] features(State s) {
@@ -243,7 +247,7 @@ public class IRLExample {
 
 		protected int getActiveLocationVal(OOState s){
 
-			List<GroundedProp> gps = this.inLocaitonPF.getAllGroundedPropsForState(s);
+			List<GroundedProp> gps = this.inLocationPF.getAllGroundedPropsForState(s);
 			for(GroundedProp gp : gps){
 				if(gp.isTrue(s)){
 					GridLocation l = (GridLocation)s.object(gp.params[1]);
@@ -252,6 +256,11 @@ public class IRLExample {
 			}
 
 			return -1;
+		}
+
+		@Override
+		public DenseStateFeatures copy() {
+			return new LocationFeatures(numLocations, inLocationPF);
 		}
 	}
 

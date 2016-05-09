@@ -101,7 +101,7 @@ public class ExampleGridWorld implements DomainGenerator {
 		}
 
 		@Override
-		protected State performActionHelper(State s, GroundedAction groundedAction) {
+		protected State sampleHelper(State s, GroundedAction groundedAction) {
 
 			//get agent current position
 			EXGridState gs = (EXGridState)s;
@@ -133,7 +133,8 @@ public class ExampleGridWorld implements DomainGenerator {
 		}
 
 
-		public List<TransitionProbability> getTransitions(State s, GroundedAction groundedAction) {
+		@Override
+		public List<TransitionProbability> transitions(State s, GroundedAction groundedAction) {
 			//get agent current position
 			EXGridState gs = (EXGridState)s;
 

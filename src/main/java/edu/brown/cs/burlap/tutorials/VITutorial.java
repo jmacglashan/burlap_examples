@@ -73,7 +73,7 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 		GroundedAction ga = (GroundedAction)a;
 
 		//what are the possible outcomes?
-		List<TransitionProbability> tps = ga.getTransitions(s);
+		List<TransitionProbability> tps = ga.transitions(s);
 
 		//aggregate over each possible outcome
 		double q = 0.;

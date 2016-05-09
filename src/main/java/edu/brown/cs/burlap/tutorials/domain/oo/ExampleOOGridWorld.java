@@ -98,7 +98,7 @@ public class ExampleOOGridWorld implements DomainGenerator{
 		}
 
 		@Override
-		protected State performActionHelper(State s, GroundedAction groundedAction) {
+		protected State sampleHelper(State s, GroundedAction groundedAction) {
 			//get agent and current position
 
 			GenericOOState oos = (GenericOOState)s;
@@ -131,7 +131,8 @@ public class ExampleOOGridWorld implements DomainGenerator{
 		}
 
 
-		public java.util.List<TransitionProbability> getTransitions(State s, GroundedAction groundedAction) {
+		@Override
+		public java.util.List<TransitionProbability> transitions(State s, GroundedAction groundedAction) {
 			//get agent and current position
 			GenericOOState oos = (GenericOOState)s;
 			ExGridAgent agent = (ExGridAgent)oos.object(CLASS_AGENT);
