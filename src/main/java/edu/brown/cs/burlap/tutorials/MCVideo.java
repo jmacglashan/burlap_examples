@@ -12,15 +12,12 @@ import burlap.domain.singleagent.mountaincar.MCState;
 import burlap.domain.singleagent.mountaincar.MountainCar;
 import burlap.domain.singleagent.mountaincar.MountainCarVisualizer;
 import burlap.mdp.auxiliary.StateGenerator;
-import burlap.mdp.core.Domain;
-import burlap.mdp.core.TerminalFunction;
 import burlap.mdp.core.state.vardomain.VariableDomain;
-import burlap.mdp.singleagent.RewardFunction;
-import burlap.mdp.singleagent.common.GoalBasedRF;
+import burlap.mdp.singleagent.SADomain;
 import burlap.mdp.singleagent.common.VisualActionObserver;
 import burlap.mdp.singleagent.environment.EnvironmentServer;
 import burlap.mdp.singleagent.environment.SimulatedEnvironment;
-import burlap.mdp.visualizer.Visualizer;
+import burlap.visualizer.Visualizer;
 
 
 /**
@@ -31,13 +28,11 @@ public class MCVideo {
 	public static void main(String[] args) {
 
 		MountainCar mcGen = new MountainCar();
-		Domain domain = mcGen.generateDomain();
-		TerminalFunction tf = new MountainCar.ClassicMCTF();
-		RewardFunction rf = new GoalBasedRF(tf, 100);
+		SADomain domain = mcGen.generateDomain();
 
 		StateGenerator rStateGen = new MCRandomStateGenerator(mcGen.physParams);
 		SARSCollector collector = new SARSCollector.UniformRandomSARSCollector(domain);
-		SARSData dataset = collector.collectNInstances(rStateGen, rf, 5000, 20, tf, null);
+		SARSData dataset = collector.collectNInstances(rStateGen, domain.getModel(), 5000, 20, null);
 
 		NormalizedVariableFeatures features = new NormalizedVariableFeatures()
 				.variableDomain("x", new VariableDomain(mcGen.physParams.xmin, mcGen.physParams.xmax))
@@ -51,7 +46,7 @@ public class MCVideo {
 		VisualActionObserver vob = new VisualActionObserver(domain, v);
 		vob.initGUI();
 
-		SimulatedEnvironment env = new SimulatedEnvironment(domain, rf, tf,
+		SimulatedEnvironment env = new SimulatedEnvironment(domain,
 				new MCState(mcGen.physParams.valleyPos(), 0));
 		EnvironmentServer envServ = new EnvironmentServer(env, vob);
 

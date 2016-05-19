@@ -1,29 +1,34 @@
 package edu.brown.cs.burlap.tutorials.domain.oo;
 
 import burlap.mdp.auxiliary.DomainGenerator;
+import burlap.mdp.auxiliary.common.NullTermination;
 import burlap.mdp.auxiliary.common.SinglePFTF;
-import burlap.mdp.core.Domain;
+import burlap.mdp.core.Action;
+import burlap.mdp.core.StateTransitionProb;
 import burlap.mdp.core.TerminalFunction;
-import burlap.mdp.core.TransitionProbability;
 import burlap.mdp.core.oo.OODomain;
 import burlap.mdp.core.oo.propositional.PropositionalFunction;
 import burlap.mdp.core.oo.state.OOState;
 import burlap.mdp.core.oo.state.ObjectInstance;
 import burlap.mdp.core.oo.state.generic.GenericOOState;
 import burlap.mdp.core.state.State;
-import burlap.mdp.singleagent.FullActionModel;
-import burlap.mdp.singleagent.GroundedAction;
-import burlap.mdp.singleagent.common.SimpleAction;
+import burlap.mdp.singleagent.action.UniversalActionType;
 import burlap.mdp.singleagent.common.SingleGoalPFRF;
+import burlap.mdp.singleagent.common.UniformCostRF;
 import burlap.mdp.singleagent.environment.SimulatedEnvironment;
-import burlap.mdp.singleagent.explorer.VisualExplorer;
+import burlap.mdp.singleagent.model.FactoredModel;
+import burlap.mdp.singleagent.model.RewardFunction;
+import burlap.mdp.singleagent.model.statemodel.FullStateModel;
 import burlap.mdp.singleagent.oo.OOSADomain;
-import burlap.mdp.visualizer.*;
+import burlap.shell.visual.VisualExplorer;
+import burlap.visualizer.*;
 
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * @author James MacGlashan.
@@ -59,6 +64,29 @@ public class ExampleOOGridWorld implements DomainGenerator{
 			{0,0,0,0,1,0,0,0,0,0,0},
 	};
 
+	protected RewardFunction rf;
+	protected TerminalFunction tf;
+
+
+	public RewardFunction getRf() {
+		return rf;
+	}
+
+	public void setRf(RewardFunction rf) {
+		this.rf = rf;
+	}
+
+	public TerminalFunction getTf() {
+		return tf;
+	}
+
+	public void setTf(TerminalFunction tf) {
+		this.tf = tf;
+	}
+
+	public List<PropositionalFunction> generatePfs(){
+		return Arrays.<PropositionalFunction>asList(new AtLocation());
+	}
 
 	@Override
 	public OOSADomain generateDomain() {
@@ -68,51 +96,109 @@ public class ExampleOOGridWorld implements DomainGenerator{
 		domain.addStateClass(CLASS_AGENT, ExGridAgent.class)
 				.addStateClass(CLASS_LOCATION, EXGridLocation.class);
 
-		new ExampleOOGridWorld.Movement(ACTION_NORTH, domain, 0);
-		new ExampleOOGridWorld.Movement(ACTION_SOUTH, domain, 1);
-		new ExampleOOGridWorld.Movement(ACTION_EAST, domain, 2);
-		new ExampleOOGridWorld.Movement(ACTION_WEST, domain, 3);
+		domain.addActionTypes(
+				new UniversalActionType(ACTION_NORTH),
+				new UniversalActionType(ACTION_SOUTH),
+				new UniversalActionType(ACTION_EAST),
+				new UniversalActionType(ACTION_WEST));
 
-		new AtLocation(domain);
+
+		OOGridWorldStateModel smodel = new OOGridWorldStateModel();
+		RewardFunction rf = this.rf;
+		TerminalFunction tf = this.tf;
+		if(rf == null){
+			rf = new UniformCostRF();
+		}
+		if(tf == null){
+			tf = new NullTermination();
+		}
+
+		domain.setModel(new FactoredModel(smodel, rf, tf));
+
+		OODomain.Helper.addPfsToDomain(domain, this.generatePfs());
 
 
 		return domain;
 	}
 
-	protected class Movement extends SimpleAction implements FullActionModel {
 
-		//0: north; 1: south; 2:east; 3: west
-		protected double [] directionProbs = new double[4];
+	protected class OOGridWorldStateModel implements FullStateModel {
 
 
-		public Movement(String actionName, Domain domain, int direction){
-			super(actionName, domain);
+		protected double [][] transitionProbs;
+
+		public OOGridWorldStateModel() {
+			this.transitionProbs = new double[4][4];
 			for(int i = 0; i < 4; i++){
-				if(i == direction){
-					directionProbs[i] = 0.8;
-				}
-				else{
-					directionProbs[i] = 0.2/3.;
+				for(int j = 0; j < 4; j++){
+					double p = i != j ? 0.2/3 : 0.8;
+					transitionProbs[i][j] = p;
 				}
 			}
 		}
 
-		@Override
-		protected State sampleHelper(State s, GroundedAction groundedAction) {
-			//get agent and current position
+		public java.util.List<StateTransitionProb> stateTransitions(State s, Action a) {
 
-			GenericOOState oos = (GenericOOState)s;
-			ExGridAgent agent = (ExGridAgent)oos.touch(CLASS_AGENT);
+			//get agent current position
+			GenericOOState gs = (GenericOOState)s;
+			ExGridAgent agent = (ExGridAgent)gs.object(CLASS_AGENT);
 
 			int curX = agent.x;
 			int curY = agent.y;
 
-			//sample directon with random roll
+			int adir = actionDir(a);
+
+			java.util.List<StateTransitionProb> tps = new ArrayList<StateTransitionProb>(4);
+			StateTransitionProb noChange = null;
+			for(int i = 0; i < 4; i++){
+
+				int [] newPos = this.moveResult(curX, curY, i);
+				if(newPos[0] != curX || newPos[1] != curY){
+					//new possible outcome
+					GenericOOState ns = gs.copy();
+					ExGridAgent nagent = (ExGridAgent)ns.touch(CLASS_AGENT);
+					nagent.x = newPos[0];
+					nagent.y = newPos[1];
+
+					//create transition probability object and add to our list of outcomes
+					tps.add(new StateTransitionProb(ns, this.transitionProbs[adir][i]));
+				}
+				else{
+					//this direction didn't lead anywhere new
+					//if there are existing possible directions
+					//that wouldn't lead anywhere, aggregate with them
+					if(noChange != null){
+						noChange.p += this.transitionProbs[adir][i];
+					}
+					else{
+						//otherwise create this new state and transition
+						noChange = new StateTransitionProb(s.copy(), this.transitionProbs[adir][i]);
+						tps.add(noChange);
+					}
+				}
+
+			}
+
+
+			return null;
+		}
+
+		public State sample(State s, Action a) {
+
+			s = s.copy();
+			GenericOOState gs = (GenericOOState)s;
+			ExGridAgent agent = (ExGridAgent)gs.touch(CLASS_AGENT);
+			int curX = agent.x;
+			int curY = agent.y;
+
+			int adir = actionDir(a);
+
+			//sample direction with random roll
 			double r = Math.random();
 			double sumProb = 0.;
 			int dir = 0;
-			for(int i = 0; i < this.directionProbs.length; i++){
-				sumProb += this.directionProbs[i];
+			for(int i = 0; i < 4; i++){
+				sumProb += this.transitionProbs[adir][i];
 				if(r < sumProb){
 					dir = i;
 					break; //found direction
@@ -127,52 +213,26 @@ public class ExampleOOGridWorld implements DomainGenerator{
 			agent.y = newPos[1];
 
 			//return the state we just modified
-			return s;
+			return gs;
 		}
 
-
-		@Override
-		public java.util.List<TransitionProbability> transitions(State s, GroundedAction groundedAction) {
-			//get agent and current position
-			GenericOOState oos = (GenericOOState)s;
-			ExGridAgent agent = (ExGridAgent)oos.object(CLASS_AGENT);
-
-			int curX = agent.x;
-			int curY = agent.y;
-
-			java.util.List<TransitionProbability> tps = new ArrayList<TransitionProbability>(4);
-			TransitionProbability noChangeTransition = null;
-			for(int i = 0; i < this.directionProbs.length; i++){
-				int [] newPos = this.moveResult(curX, curY, i);
-				if(newPos[0] != curX || newPos[1] != curY){
-					//new possible outcome
-					GenericOOState ns = oos.copy();
-					ExGridAgent nagent = (ExGridAgent)oos.touch(CLASS_AGENT);
-					nagent.x = newPos[0];
-					nagent.y = newPos[1];
-
-					//create transition probability object and add to our list of outcomes
-					tps.add(new TransitionProbability(ns, this.directionProbs[i]));
-				}
-				else{
-					//this direction didn't lead anywhere new
-					//if there are existing possible directions
-					//that wouldn't lead anywhere, aggregate with them
-					if(noChangeTransition != null){
-						noChangeTransition.p += this.directionProbs[i];
-					}
-					else{
-						//otherwise create this new state and transition
-						noChangeTransition = new TransitionProbability(s.copy(),
-								this.directionProbs[i]);
-						tps.add(noChangeTransition);
-					}
-				}
+		protected int actionDir(Action a){
+			int adir = -1;
+			if(a.actionName().equals(ACTION_NORTH)){
+				adir = 0;
 			}
-
-
-			return tps;
+			else if(a.actionName().equals(ACTION_SOUTH)){
+				adir = 1;
+			}
+			else if(a.actionName().equals(ACTION_EAST)){
+				adir = 2;
+			}
+			else if(a.actionName().equals(ACTION_WEST)){
+				adir = 3;
+			}
+			return adir;
 		}
+
 
 		protected int [] moveResult(int curX, int curY, int direction){
 
@@ -209,9 +269,8 @@ public class ExampleOOGridWorld implements DomainGenerator{
 			return new int[]{nx,ny};
 
 		}
-
-
 	}
+
 
 	public Visualizer getVisualizer(){
 		return new Visualizer(this.getStateRenderLayer());
@@ -232,8 +291,8 @@ public class ExampleOOGridWorld implements DomainGenerator{
 
 	protected class AtLocation extends PropositionalFunction {
 
-		public AtLocation(OODomain domain){
-			super(PF_AT, domain, new String []{CLASS_AGENT, CLASS_LOCATION});
+		public AtLocation(){
+			super(PF_AT, new String []{CLASS_AGENT, CLASS_LOCATION});
 		}
 
 		@Override
@@ -384,14 +443,18 @@ public class ExampleOOGridWorld implements DomainGenerator{
 	public static void main(String [] args){
 
 		ExampleOOGridWorld gen = new ExampleOOGridWorld();
+		PropositionalFunction atPf = gen.generatePfs().get(0);
+		SingleGoalPFRF rf = new SingleGoalPFRF(atPf, 100, -1);
+		TerminalFunction tf = new SinglePFTF(atPf);
+		gen.setRf(rf);
+		gen.setTf(tf);
 		OOSADomain domain = gen.generateDomain();
 
 		State initialState = new GenericOOState(new ExGridAgent(0, 0), new EXGridLocation(10, 10, "loc0"));
 
-		SingleGoalPFRF rf = new SingleGoalPFRF(domain.getPropFunction(PF_AT), 100, -1);
-		TerminalFunction tf = new SinglePFTF(domain.getPropFunction(PF_AT));
 
-		SimulatedEnvironment env = new SimulatedEnvironment(domain, rf, tf, initialState);
+
+		SimulatedEnvironment env = new SimulatedEnvironment(domain, initialState);
 
 		//TerminalExplorer exp = new TerminalExplorer(domain, env);
 		//exp.explore();
@@ -400,10 +463,10 @@ public class ExampleOOGridWorld implements DomainGenerator{
 		Visualizer v = gen.getVisualizer();
 		VisualExplorer exp = new VisualExplorer(domain, env, v);
 
-		exp.addKeyAction("w", ACTION_NORTH);
-		exp.addKeyAction("s", ACTION_SOUTH);
-		exp.addKeyAction("d", ACTION_EAST);
-		exp.addKeyAction("a", ACTION_WEST);
+		exp.addKeyAction("w", ACTION_NORTH, "");
+		exp.addKeyAction("s", ACTION_SOUTH, "");
+		exp.addKeyAction("d", ACTION_EAST, "");
+		exp.addKeyAction("a", ACTION_WEST, "");
 
 		exp.initGUI();
 

@@ -2,7 +2,7 @@ package edu.brown.cs.burlap.tutorials;
 
 import burlap.behavior.policy.GreedyQPolicy;
 import burlap.behavior.policy.Policy;
-import burlap.behavior.singleagent.EpisodeAnalysis;
+import burlap.behavior.singleagent.Episode;
 import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
 import burlap.behavior.singleagent.auxiliary.StateReachability;
 import burlap.behavior.singleagent.auxiliary.performance.LearningAlgorithmExperimenter;
@@ -35,18 +35,20 @@ import burlap.mdp.auxiliary.common.SinglePFTF;
 import burlap.mdp.auxiliary.stateconditiontest.StateConditionTest;
 import burlap.mdp.auxiliary.stateconditiontest.TFGoalCondition;
 import burlap.mdp.core.TerminalFunction;
+import burlap.mdp.core.oo.propositional.PropositionalFunction;
 import burlap.mdp.core.state.State;
 import burlap.mdp.core.state.vardomain.VariableDomain;
-import burlap.mdp.singleagent.RewardFunction;
 import burlap.mdp.singleagent.SADomain;
 import burlap.mdp.singleagent.common.GoalBasedRF;
 import burlap.mdp.singleagent.common.UniformCostRF;
 import burlap.mdp.singleagent.environment.Environment;
 import burlap.mdp.singleagent.environment.SimulatedEnvironment;
+import burlap.mdp.singleagent.model.FactoredModel;
+import burlap.mdp.singleagent.model.RewardFunction;
 import burlap.mdp.singleagent.oo.OOSADomain;
-import burlap.mdp.statehashing.HashableStateFactory;
-import burlap.mdp.statehashing.SimpleHashableStateFactory;
-import burlap.mdp.visualizer.Visualizer;
+import burlap.statehashing.HashableStateFactory;
+import burlap.statehashing.simple.SimpleHashableStateFactory;
+import burlap.visualizer.Visualizer;
 
 import java.awt.*;
 import java.util.List;
@@ -69,24 +71,26 @@ public class BasicBehavior {
 	public BasicBehavior(){
 		gwdg = new GridWorldDomain(11, 11);
 		gwdg.setMapToFourRooms();
+		rf = new UniformCostRF();
+		tf = new SinglePFTF(PropositionalFunction.getPropositionalFunction(gwdg.generatePfs(), GridWorldDomain.PF_AT_LOCATION));
+		gwdg.setRf(rf);
+		gwdg.setTf(tf);
 		domain = gwdg.generateDomain();
 
 
-		rf = new UniformCostRF();
-		tf = new SinglePFTF(domain.getPropFunction(GridWorldDomain.PF_AT_LOCATION));
+
 		goalCondition = new TFGoalCondition(tf);
 
 		initialState = new GridWorldState(new GridAgent(0, 0), new GridLocation(10, 10, "loc0"));
 
 		hashingFactory = new SimpleHashableStateFactory();
 
-		env = new SimulatedEnvironment(domain, rf, tf, initialState);
+		env = new SimulatedEnvironment(domain, initialState);
 
 
 //		VisualActionObserver observer = new VisualActionObserver(domain, GridWorldVisualizer.getVisualizer(gwdg.getMap()));
 //		observer.initGUI();
 //		env = new EnvironmentServer(env, observer);
-//		((SADomain)domain).addActionObserverForAllAction(observer);
 	}
 
 
@@ -99,7 +103,7 @@ public class BasicBehavior {
 
 		DeterministicPlanner planner = new BFS(domain, goalCondition, hashingFactory);
 		Policy p = planner.planFromState(initialState);
-		p.evaluateBehavior(initialState, rf, tf).writeToFile(outputPath + "bfs");
+		p.evaluateBehavior(initialState, domain.getModel()).writeToFile(outputPath + "bfs");
 
 	}
 
@@ -107,7 +111,7 @@ public class BasicBehavior {
 
 		DeterministicPlanner planner = new DFS(domain, goalCondition, hashingFactory);
 		Policy p = planner.planFromState(initialState);
-		p.evaluateBehavior(initialState, rf, tf).writeToFile(outputPath + "dfs");
+		p.evaluateBehavior(initialState, domain.getModel()).writeToFile(outputPath + "dfs");
 
 	}
 
@@ -125,19 +129,19 @@ public class BasicBehavior {
 			}
 		};
 
-		DeterministicPlanner planner = new AStar(domain, rf, goalCondition, hashingFactory, mdistHeuristic);
+		DeterministicPlanner planner = new AStar(domain, goalCondition, hashingFactory, mdistHeuristic);
 		Policy p = planner.planFromState(initialState);
 
-		p.evaluateBehavior(initialState, rf, tf).writeToFile(outputPath + "astar");
+		p.evaluateBehavior(initialState, domain.getModel()).writeToFile(outputPath + "astar");
 
 	}
 
 	public void valueIterationExample(String outputPath){
 
-		Planner planner = new ValueIteration(domain, rf, tf, 0.99, hashingFactory, 0.001, 100);
+		Planner planner = new ValueIteration(domain, 0.99, hashingFactory, 0.001, 100);
 		Policy p = planner.planFromState(initialState);
 
-		p.evaluateBehavior(initialState, rf, tf).writeToFile(outputPath + "vi");
+		p.evaluateBehavior(initialState, domain.getModel()).writeToFile(outputPath + "vi");
 
 		simpleValueFunctionVis((ValueFunction)planner, p);
 		//manualValueFunctionVis((ValueFunction)planner, p);
@@ -151,10 +155,10 @@ public class BasicBehavior {
 
 		//run learning for 50 episodes
 		for(int i = 0; i < 50; i++){
-			EpisodeAnalysis ea = agent.runLearningEpisode(env);
+			Episode e = agent.runLearningEpisode(env);
 
-			ea.writeToFile(outputPath + "ql_" + i);
-			System.out.println(i + ": " + ea.maxTimeStep());
+			e.writeToFile(outputPath + "ql_" + i);
+			System.out.println(i + ": " + e.maxTimeStep());
 
 			//reset environment for next learning episode
 			env.resetEnvironment();
@@ -171,10 +175,10 @@ public class BasicBehavior {
 
 		//run learning for 50 episodes
 		for(int i = 0; i < 50; i++){
-			EpisodeAnalysis ea = agent.runLearningEpisode(env);
+			Episode e = agent.runLearningEpisode(env);
 
-			ea.writeToFile(outputPath + "sarsa_" + i);
-			System.out.println(i + ": " + ea.maxTimeStep());
+			e.writeToFile(outputPath + "sarsa_" + i);
+			System.out.println(i + ": " + e.maxTimeStep());
 
 			//reset environment for next learning episode
 			env.resetEnvironment();
@@ -235,8 +239,8 @@ public class BasicBehavior {
 
 	public void experimentAndPlotter(){
 
-		//different reward function for more interesting results
-		((SimulatedEnvironment)env).setRf(new GoalBasedRF(this.goalCondition, 5.0, -0.1));
+		//different reward function for more structured performance plots
+		((FactoredModel)domain.getModel()).setRf(new GoalBasedRF(this.goalCondition, 5.0, -0.1));
 
 		/**
 		 * Create factories for Q-learning agent and SARSA agent to compare
@@ -267,9 +271,9 @@ public class BasicBehavior {
 
 		LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(env, 10, 100, qLearningFactory, sarsaLearningFactory);
 		exp.setUpPlottingConfiguration(500, 250, 2, 1000,
-				TrialMode.MOSTRECENTANDAVERAGE,
-				PerformanceMetric.CUMULATIVESTEPSPEREPISODE,
-				PerformanceMetric.AVERAGEEPISODEREWARD);
+				TrialMode.MOST_RECENT_AND_AVERAGE,
+				PerformanceMetric.CUMULATIVE_STEPS_PER_EPISODE,
+				PerformanceMetric.AVERAGE_EPISODE_REWARD);
 
 		exp.startExperiment();
 		exp.writeStepAndEpisodeDataToCSV("expData");

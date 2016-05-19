@@ -2,7 +2,7 @@ package edu.brown.cs.burlap.examples;
 
 import burlap.behavior.functionapproximation.dense.DenseStateFeatures;
 import burlap.behavior.policy.GreedyQPolicy;
-import burlap.behavior.singleagent.EpisodeAnalysis;
+import burlap.behavior.singleagent.Episode;
 import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
 import burlap.behavior.singleagent.auxiliary.StateReachability;
 import burlap.behavior.singleagent.auxiliary.valuefunctionvis.ValueFunctionVisualizerGUI;
@@ -28,10 +28,10 @@ import burlap.mdp.core.state.State;
 import burlap.mdp.singleagent.SADomain;
 import burlap.mdp.singleagent.common.NullRewardFunction;
 import burlap.mdp.singleagent.environment.SimulatedEnvironment;
-import burlap.mdp.singleagent.explorer.VisualExplorer;
 import burlap.mdp.singleagent.oo.OOSADomain;
-import burlap.mdp.statehashing.SimpleHashableStateFactory;
-import burlap.mdp.visualizer.Visualizer;
+import burlap.shell.visual.VisualExplorer;
+import burlap.statehashing.simple.SimpleHashableStateFactory;
+import burlap.visualizer.Visualizer;
 
 import java.util.List;
 
@@ -76,12 +76,12 @@ public class IRLExample {
 	 * and do so from two different start locations on the left (if you keep resetting the environment, it will change where the agent starts).
 	 */
 	public void launchExplorer(){
-		SimulatedEnvironment env = new SimulatedEnvironment(this.domain, new NullRewardFunction(), new NullTermination(), this.sg);
+		SimulatedEnvironment env = new SimulatedEnvironment(this.domain, this.sg);
 		VisualExplorer exp = new VisualExplorer(this.domain, env, this.v, 800, 800);
-		exp.addKeyAction("w", GridWorldDomain.ACTION_NORTH);
-		exp.addKeyAction("s", GridWorldDomain.ACTION_SOUTH);
-		exp.addKeyAction("d", GridWorldDomain.ACTION_EAST);
-		exp.addKeyAction("a", GridWorldDomain.ACTION_WEST);
+		exp.addKeyAction("w", GridWorldDomain.ACTION_NORTH, "");
+		exp.addKeyAction("s", GridWorldDomain.ACTION_SOUTH, "");
+		exp.addKeyAction("d", GridWorldDomain.ACTION_EAST, "");
+		exp.addKeyAction("a", GridWorldDomain.ACTION_WEST, "");
 
 		//exp.enableEpisodeRecording("r", "f", "irlDemo");
 
@@ -114,13 +114,13 @@ public class IRLExample {
 		}
 
 		//load our saved demonstrations from disk
-		List<EpisodeAnalysis> episodes = EpisodeAnalysis.parseFilesIntoEAList(pathToEpisodes, domain);
+		List<Episode> episodes = Episode.parseFilesIntoEAList(pathToEpisodes, domain);
 
 		//use either DifferentiableVI or DifferentiableSparseSampling for planning. The latter enables receding horizon IRL,
 		//but you will probably want to use a fairly large horizon for this kind of reward function.
 		double beta = 10.;
 		//DifferentiableVI dplanner = new DifferentiableVI(this.domain, rf, new NullTermination(), 0.99, 8, new SimpleHashableStateFactory(), 0.01, 100);
-		DifferentiableSparseSampling dplanner = new DifferentiableSparseSampling(this.domain, rf, new NullTermination(), 0.99, new SimpleHashableStateFactory(), 10, -1, beta);
+		DifferentiableSparseSampling dplanner = new DifferentiableSparseSampling(this.domain, rf, 0.99, new SimpleHashableStateFactory(), 10, -1, beta);
 
 
 		dplanner.toggleDebugPrinting(false);

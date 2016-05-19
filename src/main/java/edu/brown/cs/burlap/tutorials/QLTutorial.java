@@ -2,7 +2,7 @@ package edu.brown.cs.burlap.tutorials;
 
 import burlap.behavior.policy.EpsilonGreedy;
 import burlap.behavior.policy.Policy;
-import burlap.behavior.singleagent.EpisodeAnalysis;
+import burlap.behavior.singleagent.Episode;
 import burlap.behavior.singleagent.MDPSolver;
 import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
 import burlap.behavior.singleagent.learning.LearningAgent;
@@ -15,20 +15,19 @@ import burlap.domain.singleagent.gridworld.GridWorldVisualizer;
 import burlap.domain.singleagent.gridworld.state.GridAgent;
 import burlap.domain.singleagent.gridworld.state.GridLocation;
 import burlap.domain.singleagent.gridworld.state.GridWorldState;
-import burlap.mdp.core.AbstractGroundedAction;
-import burlap.mdp.core.Domain;
+import burlap.mdp.core.Action;
 import burlap.mdp.core.TerminalFunction;
 import burlap.mdp.core.state.State;
-import burlap.mdp.singleagent.GroundedAction;
-import burlap.mdp.singleagent.RewardFunction;
+import burlap.mdp.singleagent.SADomain;
 import burlap.mdp.singleagent.common.UniformCostRF;
 import burlap.mdp.singleagent.environment.Environment;
 import burlap.mdp.singleagent.environment.EnvironmentOutcome;
 import burlap.mdp.singleagent.environment.SimulatedEnvironment;
-import burlap.mdp.statehashing.HashableState;
-import burlap.mdp.statehashing.HashableStateFactory;
-import burlap.mdp.statehashing.SimpleHashableStateFactory;
-import burlap.mdp.visualizer.Visualizer;
+import burlap.mdp.singleagent.model.RewardFunction;
+import burlap.statehashing.HashableState;
+import burlap.statehashing.HashableStateFactory;
+import burlap.statehashing.simple.SimpleHashableStateFactory;
+import burlap.visualizer.Visualizer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -45,10 +44,10 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QFunction {
 	double learningRate;
 	Policy learningPolicy;
 
-	public QLTutorial(Domain domain, double gamma, HashableStateFactory hashingFactory,
+	public QLTutorial(SADomain domain, double gamma, HashableStateFactory hashingFactory,
 					  ValueFunctionInitialization qinit, double learningRate, double epsilon){
 
-		this.solverInit(domain, null, null, gamma, hashingFactory);
+		this.solverInit(domain, gamma, hashingFactory);
 		this.qinit = qinit;
 		this.learningRate = learningRate;
 		this.qValues = new HashMap<HashableState, List<QValue>>();
@@ -56,24 +55,24 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QFunction {
 
 	}
 
-	public EpisodeAnalysis runLearningEpisode(Environment env) {
+	public Episode runLearningEpisode(Environment env) {
 		return this.runLearningEpisode(env, -1);
 	}
 
-	public EpisodeAnalysis runLearningEpisode(Environment env, int maxSteps) {
+	public Episode runLearningEpisode(Environment env, int maxSteps) {
 		//initialize our episode analysis object with the initial state of the environment
-		EpisodeAnalysis ea = new EpisodeAnalysis(env.getCurrentObservation());
+		Episode ea = new Episode(env.currentObservation());
 
 		//behave until a terminal state or max steps is reached
-		State curState = env.getCurrentObservation();
+		State curState = env.currentObservation();
 		int steps = 0;
 		while(!env.isInTerminalState() && (steps < maxSteps || maxSteps == -1)){
 
 			//select an action
-			GroundedAction a = (GroundedAction)this.learningPolicy.getAction(curState);
+			Action a = this.learningPolicy.getAction(curState);
 
 			//take the action and observe outcome
-			EnvironmentOutcome eo = a.executeIn(env);
+			EnvironmentOutcome eo = env.executeAction(a);
 
 			//record result
 			ea.recordTransitionTo(a, eo.op, eo.r);
@@ -109,10 +108,10 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QFunction {
 
 		//create and add initialized Q-values if we don't have them stored for this state
 		if(qs == null){
-			List<GroundedAction> actions = this.getAllGroundedActions(s);
+			List<Action> actions = this.getAllGroundedActions(s);
 			qs = new ArrayList<QValue>(actions.size());
 			//create a Q-value for each action
-			for(GroundedAction ga : actions){
+			for(Action ga : actions){
 				//add q with initialized value
 				qs.add(new QValue(s, ga, this.qinit.qValue(s, ga)));
 			}
@@ -123,12 +122,9 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QFunction {
 		return qs;
 	}
 
-	public QValue getQ(State s, AbstractGroundedAction a) {
+	public QValue getQ(State s, Action a) {
 		//first get all Q-values
 		List<QValue> qs = this.getQs(s);
-
-		//translate action parameters to source state for Q-values if needed
-		a = ((GroundedAction)a).translateParameters(s, qs.get(0).s);
 
 		//iterate through stored Q-values to find a match for the input action
 		for(QValue q : qs){
@@ -151,7 +147,7 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QFunction {
 		gwd.setMapToFourRooms();
 		gwd.setProbSucceedTransitionDynamics(0.8);
 
-		Domain domain = gwd.generateDomain();
+		SADomain domain = gwd.generateDomain();
 
 		//get initial state with agent in 0,0
 		State s = new GridWorldState(new GridAgent(0, 0), new GridLocation(10, 10, "loc0"));
@@ -163,14 +159,14 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QFunction {
 		TerminalFunction tf = new GridWorldTerminalFunction(10, 10);
 
 		//create environment
-		SimulatedEnvironment env = new SimulatedEnvironment(domain,rf, tf, s);
+		SimulatedEnvironment env = new SimulatedEnvironment(domain, s);
 
 		//create Q-learning
 		QLTutorial agent = new QLTutorial(domain, 0.99, new SimpleHashableStateFactory(),
 				new ValueFunctionInitialization.ConstantValueFunctionInitialization(), 0.1, 0.1);
 
 		//run Q-learning and store results in a list
-		List<EpisodeAnalysis> episodes = new ArrayList<EpisodeAnalysis>(1000);
+		List<Episode> episodes = new ArrayList<Episode>(1000);
 		for(int i = 0; i < 1000; i++){
 			episodes.add(agent.runLearningEpisode(env));
 			env.resetEnvironment();

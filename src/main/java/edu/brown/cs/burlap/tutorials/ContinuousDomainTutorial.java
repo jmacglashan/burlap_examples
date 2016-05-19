@@ -14,7 +14,7 @@ import burlap.behavior.functionapproximation.sparse.tilecoding.TileCodingFeature
 import burlap.behavior.functionapproximation.sparse.tilecoding.TilingArrangement;
 import burlap.behavior.policy.GreedyQPolicy;
 import burlap.behavior.policy.Policy;
-import burlap.behavior.singleagent.EpisodeAnalysis;
+import burlap.behavior.singleagent.Episode;
 import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
 import burlap.behavior.singleagent.auxiliary.gridset.FlatStateGridder;
 import burlap.behavior.singleagent.learning.lspi.LSPI;
@@ -27,8 +27,6 @@ import burlap.domain.singleagent.cartpole.InvertedPendulum;
 import burlap.domain.singleagent.cartpole.states.InvertedPendulumState;
 import burlap.domain.singleagent.lunarlander.LLVisualizer;
 import burlap.domain.singleagent.lunarlander.LunarLanderDomain;
-import burlap.domain.singleagent.lunarlander.LunarLanderRF;
-import burlap.domain.singleagent.lunarlander.LunarLanderTF;
 import burlap.domain.singleagent.lunarlander.state.LLAgent;
 import burlap.domain.singleagent.lunarlander.state.LLBlock;
 import burlap.domain.singleagent.lunarlander.state.LLState;
@@ -37,17 +35,16 @@ import burlap.domain.singleagent.mountaincar.MCState;
 import burlap.domain.singleagent.mountaincar.MountainCar;
 import burlap.domain.singleagent.mountaincar.MountainCarVisualizer;
 import burlap.mdp.auxiliary.StateGenerator;
-import burlap.mdp.core.Domain;
 import burlap.mdp.core.TerminalFunction;
 import burlap.mdp.core.state.State;
 import burlap.mdp.core.state.vardomain.VariableDomain;
-import burlap.mdp.singleagent.RewardFunction;
-import burlap.mdp.singleagent.common.GoalBasedRF;
+import burlap.mdp.singleagent.SADomain;
 import burlap.mdp.singleagent.common.VisualActionObserver;
 import burlap.mdp.singleagent.environment.SimulatedEnvironment;
+import burlap.mdp.singleagent.model.RewardFunction;
 import burlap.mdp.singleagent.oo.OOSADomain;
-import burlap.mdp.statehashing.SimpleHashableStateFactory;
-import burlap.mdp.visualizer.Visualizer;
+import burlap.statehashing.simple.SimpleHashableStateFactory;
+import burlap.visualizer.Visualizer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,13 +62,11 @@ public class ContinuousDomainTutorial {
 	public static void MCLSPIFB(){
 
 		MountainCar mcGen = new MountainCar();
-		Domain domain = mcGen.generateDomain();
-		TerminalFunction tf = new MountainCar.ClassicMCTF();
-		RewardFunction rf = new GoalBasedRF(tf, 100);
+		SADomain domain = mcGen.generateDomain();
 
 		StateGenerator rStateGen = new MCRandomStateGenerator(mcGen.physParams);
 		SARSCollector collector = new SARSCollector.UniformRandomSARSCollector(domain);
-		SARSData dataset = collector.collectNInstances(rStateGen, rf, 5000, 20, tf, null);
+		SARSData dataset = collector.collectNInstances(rStateGen, domain.getModel(), 5000, 20, null);
 
 		NormalizedVariableFeatures inputFeatures = new NormalizedVariableFeatures()
 				.variableDomain("x", new VariableDomain(mcGen.physParams.xmin, mcGen.physParams.xmax))
@@ -86,7 +81,7 @@ public class ContinuousDomainTutorial {
 		VisualActionObserver vob = new VisualActionObserver(domain, v);
 		vob.initGUI();
 
-		SimulatedEnvironment env = new SimulatedEnvironment(domain, rf, tf, new MCState(mcGen.physParams.valleyPos(), 0.));
+		SimulatedEnvironment env = new SimulatedEnvironment(domain, new MCState(mcGen.physParams.valleyPos(), 0.));
 		env.addObservers(vob);
 
 		for(int i = 0; i < 5; i++){
@@ -102,9 +97,7 @@ public class ContinuousDomainTutorial {
 	public static void MCLSPIRBF(){
 
 		MountainCar mcGen = new MountainCar();
-		Domain domain = mcGen.generateDomain();
-		TerminalFunction tf = new MountainCar.ClassicMCTF();
-		RewardFunction rf = new GoalBasedRF(tf, 100);
+		SADomain domain = mcGen.generateDomain();
 		MCState s = new MCState(mcGen.physParams.valleyPos(), 0.);
 
 		NormalizedVariableFeatures inputFeatures = new NormalizedVariableFeatures()
@@ -113,7 +106,7 @@ public class ContinuousDomainTutorial {
 
 		StateGenerator rStateGen = new MCRandomStateGenerator(mcGen.physParams);
 		SARSCollector collector = new SARSCollector.UniformRandomSARSCollector(domain);
-		SARSData dataset = collector.collectNInstances(rStateGen, rf, 5000, 20, tf, null);
+		SARSData dataset = collector.collectNInstances(rStateGen, domain.getModel(), 5000, 20, null);
 
 		RBFFeatures rbf = new RBFFeatures(inputFeatures, true);
 		FlatStateGridder gridder = new FlatStateGridder()
@@ -134,7 +127,7 @@ public class ContinuousDomainTutorial {
 		vob.initGUI();
 
 
-		SimulatedEnvironment env = new SimulatedEnvironment(domain, rf, tf, s);
+		SimulatedEnvironment env = new SimulatedEnvironment(domain, s);
 		env.addObservers(vob);
 
 		for(int i = 0; i < 5; i++){
@@ -152,17 +145,20 @@ public class ContinuousDomainTutorial {
 
 		InvertedPendulum ip = new InvertedPendulum();
 		ip.physParams.actionNoise = 0.;
-		Domain domain = ip.generateDomain();
 		RewardFunction rf = new InvertedPendulum.InvertedPendulumRewardFunction(Math.PI/8.);
 		TerminalFunction tf = new InvertedPendulum.InvertedPendulumTerminalFunction(Math.PI/8.);
+		ip.setRf(rf);
+		ip.setTf(tf);
+		SADomain domain = ip.generateDomain();
+
 		State initialState = new InvertedPendulumState();
 
-		SparseSampling ss = new SparseSampling(domain, rf, tf, 1, new SimpleHashableStateFactory(), 10 ,1);
+		SparseSampling ss = new SparseSampling(domain, 1, new SimpleHashableStateFactory(), 10 ,1);
 		ss.setForgetPreviousPlanResults(true);
 		ss.toggleDebugPrinting(false);
 		Policy p = new GreedyQPolicy(ss);
 
-		EpisodeAnalysis ea = p.evaluateBehavior(initialState, rf, tf, 500);
+		Episode ea = p.evaluateBehavior(initialState, domain.getModel(), 500);
 		System.out.println("Num steps: " + ea.maxTimeStep());
 		Visualizer v = CartPoleVisualizer.getCartPoleVisualizer();
 		new EpisodeSequenceVisualizer(v, domain, Arrays.asList(ea));
@@ -172,9 +168,7 @@ public class ContinuousDomainTutorial {
 	public static void LLSARSA(){
 
 		LunarLanderDomain lld = new LunarLanderDomain();
-		OOSADomain domain = (OOSADomain)lld.generateDomain();
-		RewardFunction rf = new LunarLanderRF(domain);
-		TerminalFunction tf = new LunarLanderTF(domain);
+		OOSADomain domain = lld.generateDomain();
 
 		LLState s = new LLState(new LLAgent(5, 0, 0), new LLBlock.LLPad(75, 95, 0, 10, "pad"));
 
@@ -204,10 +198,10 @@ public class ContinuousDomainTutorial {
 		DifferentiableStateActionValue vfa = tilecoding.generateVFA(defaultQ/nTilings);
 		GradientDescentSarsaLam agent = new GradientDescentSarsaLam(domain, 0.99, vfa, 0.02, 0.5);
 
-		SimulatedEnvironment env = new SimulatedEnvironment(domain, rf, tf, s);
-		List<EpisodeAnalysis> episodes = new ArrayList<EpisodeAnalysis>();
+		SimulatedEnvironment env = new SimulatedEnvironment(domain, s);
+		List<Episode> episodes = new ArrayList<Episode>();
 		for(int i = 0; i < 5000; i++){
-			EpisodeAnalysis ea = agent.runLearningEpisode(env);
+			Episode ea = agent.runLearningEpisode(env);
 			episodes.add(ea);
 			System.out.println(i + ": " + ea.maxTimeStep());
 			env.resetEnvironment();

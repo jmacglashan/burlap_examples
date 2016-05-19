@@ -2,26 +2,29 @@ package edu.brown.cs.burlap.tutorials.domain.simple;
 
 
 import burlap.mdp.auxiliary.DomainGenerator;
-import burlap.mdp.core.Domain;
-import burlap.mdp.core.TerminalFunction;
-import burlap.mdp.core.TransitionProbability;
+import burlap.mdp.auxiliary.common.NullTermination;
+import burlap.mdp.core.*;
+
 import burlap.mdp.core.state.State;
-import burlap.mdp.singleagent.FullActionModel;
-import burlap.mdp.singleagent.GroundedAction;
-import burlap.mdp.singleagent.RewardFunction;
 import burlap.mdp.singleagent.SADomain;
-import burlap.mdp.singleagent.common.SimpleAction;
+import burlap.mdp.singleagent.action.UniversalActionType;
+import burlap.mdp.singleagent.common.UniformCostRF;
 import burlap.mdp.singleagent.environment.SimulatedEnvironment;
-import burlap.mdp.singleagent.explorer.VisualExplorer;
-import burlap.mdp.visualizer.StatePainter;
-import burlap.mdp.visualizer.StateRenderLayer;
-import burlap.mdp.visualizer.Visualizer;
+import burlap.mdp.singleagent.model.FactoredModel;
+import burlap.mdp.singleagent.model.RewardFunction;
+import burlap.mdp.singleagent.model.statemodel.FullStateModel;
+import burlap.shell.visual.VisualExplorer;
+import burlap.visualizer.StatePainter;
+import burlap.visualizer.StateRenderLayer;
+import burlap.visualizer.Visualizer;
 
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
+
+
 
 /**
  * @author James MacGlashan.
@@ -36,6 +39,25 @@ public class ExampleGridWorld implements DomainGenerator {
 	public static final String ACTION_EAST = "east";
 	public static final String ACTION_WEST = "west";
 
+
+	protected RewardFunction rf;
+	protected TerminalFunction tf;
+
+	public TerminalFunction getTf() {
+		return tf;
+	}
+
+	public void setTf(TerminalFunction tf) {
+		this.tf = tf;
+	}
+
+	public RewardFunction getRf() {
+		return rf;
+	}
+
+	public void setRf(RewardFunction rf) {
+		this.rf = rf;
+	}
 
 	//ordered so first dimension is x
 	protected int [][] map = new int[][]{
@@ -58,11 +80,23 @@ public class ExampleGridWorld implements DomainGenerator {
 		SADomain domain = new SADomain();
 
 
-		new ExampleGridWorld.Movement(ACTION_NORTH, domain, 0);
-		new ExampleGridWorld.Movement(ACTION_SOUTH, domain, 1);
-		new ExampleGridWorld.Movement(ACTION_EAST, domain, 2);
-		new ExampleGridWorld.Movement(ACTION_WEST, domain, 3);
+		domain.addActionTypes(
+				new UniversalActionType(ACTION_NORTH),
+				new UniversalActionType(ACTION_SOUTH),
+				new UniversalActionType(ACTION_EAST),
+				new UniversalActionType(ACTION_WEST));
 
+		GridWorldStateModel smodel = new GridWorldStateModel();
+		RewardFunction rf = this.rf;
+		TerminalFunction tf = this.tf;
+		if(rf == null){
+			rf = new UniformCostRF();
+		}
+		if(tf == null){
+			tf = new NullTermination();
+		}
+
+		domain.setModel(new FactoredModel(smodel, rf, tf));
 
 		return domain;
 	}
@@ -82,26 +116,23 @@ public class ExampleGridWorld implements DomainGenerator {
 	}
 
 
-	protected class Movement extends SimpleAction implements FullActionModel {
 
-		//0: north; 1: south; 2:east; 3: west
-		protected double [] directionProbs = new double[4];
+	protected class GridWorldStateModel implements FullStateModel{
 
 
-		public Movement(String actionName, Domain domain, int direction){
-			super(actionName, domain);
+		protected double [][] transitionProbs;
+
+		public GridWorldStateModel() {
+			this.transitionProbs = new double[4][4];
 			for(int i = 0; i < 4; i++){
-				if(i == direction){
-					directionProbs[i] = 0.8;
-				}
-				else{
-					directionProbs[i] = 0.2/3.;
+				for(int j = 0; j < 4; j++){
+					double p = i != j ? 0.2/3 : 0.8;
+					transitionProbs[i][j] = p;
 				}
 			}
 		}
 
-		@Override
-		protected State sampleHelper(State s, GroundedAction groundedAction) {
+		public List<StateTransitionProb> stateTransitions(State s, Action a) {
 
 			//get agent current position
 			EXGridState gs = (EXGridState)s;
@@ -109,12 +140,57 @@ public class ExampleGridWorld implements DomainGenerator {
 			int curX = gs.x;
 			int curY = gs.y;
 
-			//sample directon with random roll
+			int adir = actionDir(a);
+
+			List<StateTransitionProb> tps = new ArrayList<StateTransitionProb>(4);
+			StateTransitionProb noChange = null;
+			for(int i = 0; i < 4; i++){
+
+				int [] newPos = this.moveResult(curX, curY, i);
+				if(newPos[0] != curX || newPos[1] != curY){
+					//new possible outcome
+					EXGridState ns = gs.copy();
+					ns.x = newPos[0];
+					ns.y = newPos[1];
+
+					//create transition probability object and add to our list of outcomes
+					tps.add(new StateTransitionProb(ns, this.transitionProbs[adir][i]));
+				}
+				else{
+					//this direction didn't lead anywhere new
+					//if there are existing possible directions
+					//that wouldn't lead anywhere, aggregate with them
+					if(noChange != null){
+						noChange.p += this.transitionProbs[adir][i];
+					}
+					else{
+						//otherwise create this new state and transition
+						noChange = new StateTransitionProb(s.copy(), this.transitionProbs[adir][i]);
+						tps.add(noChange);
+					}
+				}
+
+			}
+
+
+			return null;
+		}
+
+		public State sample(State s, Action a) {
+
+			s = s.copy();
+			EXGridState gs = (EXGridState)s;
+			int curX = gs.x;
+			int curY = gs.y;
+
+			int adir = actionDir(a);
+
+			//sample direction with random roll
 			double r = Math.random();
 			double sumProb = 0.;
 			int dir = 0;
-			for(int i = 0; i < this.directionProbs.length; i++){
-				sumProb += this.directionProbs[i];
+			for(int i = 0; i < 4; i++){
+				sumProb += this.transitionProbs[adir][i];
 				if(r < sumProb){
 					dir = i;
 					break; //found direction
@@ -129,50 +205,26 @@ public class ExampleGridWorld implements DomainGenerator {
 			gs.y = newPos[1];
 
 			//return the state we just modified
-			return s;
+			return gs;
 		}
 
-
-		@Override
-		public List<TransitionProbability> transitions(State s, GroundedAction groundedAction) {
-			//get agent current position
-			EXGridState gs = (EXGridState)s;
-
-			int curX = gs.x;
-			int curY = gs.y;
-
-			List<TransitionProbability> tps = new ArrayList<TransitionProbability>(4);
-			TransitionProbability noChangeTransition = null;
-			for(int i = 0; i < this.directionProbs.length; i++){
-				int [] newPos = this.moveResult(curX, curY, i);
-				if(newPos[0] != curX || newPos[1] != curY){
-					//new possible outcome
-					EXGridState ns = gs.copy();
-					ns.x = newPos[0];
-					ns.y = newPos[1];
-
-					//create transition probability object and add to our list of outcomes
-					tps.add(new TransitionProbability(ns, this.directionProbs[i]));
-				}
-				else{
-					//this direction didn't lead anywhere new
-					//if there are existing possible directions
-					//that wouldn't lead anywhere, aggregate with them
-					if(noChangeTransition != null){
-						noChangeTransition.p += this.directionProbs[i];
-					}
-					else{
-						//otherwise create this new state and transition
-						noChangeTransition = new TransitionProbability(s.copy(),
-								this.directionProbs[i]);
-						tps.add(noChangeTransition);
-					}
-				}
+		protected int actionDir(Action a){
+			int adir = -1;
+			if(a.actionName().equals(ACTION_NORTH)){
+				adir = 0;
 			}
-
-
-			return tps;
+			else if(a.actionName().equals(ACTION_SOUTH)){
+				adir = 1;
+			}
+			else if(a.actionName().equals(ACTION_EAST)){
+				adir = 2;
+			}
+			else if(a.actionName().equals(ACTION_WEST)){
+				adir = 3;
+			}
+			return adir;
 		}
+
 
 		protected int [] moveResult(int curX, int curY, int direction){
 
@@ -209,11 +261,7 @@ public class ExampleGridWorld implements DomainGenerator {
 			return new int[]{nx,ny};
 
 		}
-
-
 	}
-
-
 
 
 
@@ -315,7 +363,7 @@ public class ExampleGridWorld implements DomainGenerator {
 			this.goalY = goalY;
 		}
 
-		public double reward(State s, GroundedAction a, State sprime) {
+		public double reward(State s, Action a, State sprime) {
 
 			int ax = (Integer)s.get(VAR_X);
 			int ay = (Integer)s.get(VAR_Y);
@@ -364,14 +412,16 @@ public class ExampleGridWorld implements DomainGenerator {
 	public static void main(String [] args){
 
 		ExampleGridWorld gen = new ExampleGridWorld();
-		Domain domain = gen.generateDomain();
+		RewardFunction rf = new ExampleGridWorld.ExampleRF(10, 10);
+		TerminalFunction tf = new ExampleGridWorld.ExampleTF(10, 10);
+		gen.setRf(rf);
+		gen.setTf(tf);
+		SADomain domain = gen.generateDomain();
 
 		State initialState = new EXGridState(0, 0);
 
-		RewardFunction rf = new ExampleGridWorld.ExampleRF(10, 10);
-		TerminalFunction tf = new ExampleGridWorld.ExampleTF(10, 10);
 
-		SimulatedEnvironment env = new SimulatedEnvironment(domain, rf, tf, initialState);
+		SimulatedEnvironment env = new SimulatedEnvironment(domain, initialState);
 
 		//TerminalExplorer exp = new TerminalExplorer(domain, env);
 		//exp.explore();
@@ -380,10 +430,10 @@ public class ExampleGridWorld implements DomainGenerator {
 		Visualizer v = gen.getVisualizer();
 		VisualExplorer exp = new VisualExplorer(domain, env, v);
 
-		exp.addKeyAction("w", ACTION_NORTH);
-		exp.addKeyAction("s", ACTION_SOUTH);
-		exp.addKeyAction("d", ACTION_EAST);
-		exp.addKeyAction("a", ACTION_WEST);
+		exp.addKeyAction("w", ACTION_NORTH, "");
+		exp.addKeyAction("s", ACTION_SOUTH, "");
+		exp.addKeyAction("d", ACTION_EAST, "");
+		exp.addKeyAction("a", ACTION_WEST, "");
 
 		exp.initGUI();
 

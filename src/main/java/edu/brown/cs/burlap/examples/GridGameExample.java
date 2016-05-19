@@ -1,7 +1,7 @@
 package edu.brown.cs.burlap.examples;
 
 import burlap.behavior.singleagent.learning.tdmethods.QLearning;
-import burlap.behavior.stochasticgames.GameAnalysis;
+import burlap.behavior.stochasticgames.GameEpisode;
 import burlap.behavior.stochasticgames.PolicyFromJointPolicy;
 import burlap.behavior.stochasticgames.agents.interfacing.singleagent.LearningAgentToSGAgentInterface;
 import burlap.behavior.stochasticgames.agents.madp.MultiAgentDPPlanningAgent;
@@ -18,13 +18,13 @@ import burlap.domain.stochasticgames.gridgame.GGVisualizer;
 import burlap.domain.stochasticgames.gridgame.GridGame;
 import burlap.mdp.core.TerminalFunction;
 import burlap.mdp.core.state.State;
-import burlap.mdp.statehashing.HashableStateFactory;
-import burlap.mdp.statehashing.SimpleHashableStateFactory;
-import burlap.mdp.stochasticgames.JointReward;
-import burlap.mdp.stochasticgames.SGAgentType;
-import burlap.mdp.stochasticgames.World;
+import burlap.mdp.stochasticgames.agent.SGAgentType;
+import burlap.mdp.stochasticgames.model.JointRewardFunction;
 import burlap.mdp.stochasticgames.oo.OOSGDomain;
-import burlap.mdp.visualizer.Visualizer;
+import burlap.mdp.stochasticgames.world.World;
+import burlap.statehashing.HashableStateFactory;
+import burlap.statehashing.simple.SimpleHashableStateFactory;
+import burlap.visualizer.Visualizer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,7 +50,7 @@ public class GridGameExample {
 		final State s = GridGame.getPrisonersDilemmaInitialState();
 
 		//define joint reward function and termination conditions for this game
-		JointReward rf = new GridGame.GGJointRewardFunction(domain, -1, 100, false);
+		JointRewardFunction rf = new GridGame.GGJointRewardFunction(domain, -1, 100, false);
 		TerminalFunction tf = new GridGame.GGTerminalFunction(domain);
 
 		//both agents are standard: access to all actions
@@ -75,7 +75,7 @@ public class GridGameExample {
 		a1.joinWorld(w, at);
 
 		//run some games of the agents playing that policy
-		GameAnalysis ga = null;
+		GameEpisode ga = null;
 		for(int i = 0; i < 3; i++){
 			ga = w.runGame();
 		}
@@ -96,7 +96,7 @@ public class GridGameExample {
 
 		final State s = GridGame.getPrisonersDilemmaInitialState();
 
-		JointReward rf = new GridGame.GGJointRewardFunction(domain, -1, 100, false);
+		JointRewardFunction rf = new GridGame.GGJointRewardFunction(domain, -1, 100, false);
 		TerminalFunction tf = new GridGame.GGTerminalFunction(domain);
 
 		SGAgentType at = GridGame.getStandardGridGameAgentType(domain);
@@ -115,8 +115,8 @@ public class GridGameExample {
 		a0.joinWorld(w, at);
 		a1.joinWorld(w, at);
 
-		GameAnalysis ga = null;
-		List<GameAnalysis> games = new ArrayList<GameAnalysis>();
+		GameEpisode ga = null;
+		List<GameEpisode> games = new ArrayList<GameEpisode>();
 		for(int i = 0; i < 10; i++){
 			ga = w.runGame();
 			games.add(ga);
@@ -136,7 +136,7 @@ public class GridGameExample {
 		final HashableStateFactory hashingFactory = new SimpleHashableStateFactory();
 
 		final State s = GridGame.getPrisonersDilemmaInitialState();
-		JointReward rf = new GridGame.GGJointRewardFunction(domain, -1, 100, false);
+		JointRewardFunction rf = new GridGame.GGJointRewardFunction(domain, -1, 100, false);
 		TerminalFunction tf = new GridGame.GGTerminalFunction(domain);
 		SGAgentType at = GridGame.getStandardGridGameAgentType(domain);
 
@@ -158,9 +158,9 @@ public class GridGameExample {
 
 		System.out.println("Starting training");
 		int ngames = 1000;
-		List<GameAnalysis> games = new ArrayList<GameAnalysis>();
+		List<GameEpisode> games = new ArrayList<GameEpisode>();
 		for(int i = 0; i < ngames; i++){
-			GameAnalysis ga = w.runGame();
+			GameEpisode ga = w.runGame();
 			games.add(ga);
 			if(i % 10 == 0){
 				System.out.println("Game: " + i + ": " + ga.maxTimeStep());
@@ -184,7 +184,7 @@ public class GridGameExample {
 		final HashableStateFactory hashingFactory = new SimpleHashableStateFactory();
 
 		final State s = GridGame.getSimpleGameInitialState();
-		JointReward rf = new GridGame.GGJointRewardFunction(domain, -1, 100, false);
+		JointRewardFunction rf = new GridGame.GGJointRewardFunction(domain, -1, 100, false);
 		TerminalFunction tf = new GridGame.GGTerminalFunction(domain);
 		SGAgentType at = GridGame.getStandardGridGameAgentType(domain);
 
@@ -207,9 +207,9 @@ public class GridGameExample {
 
 		System.out.println("Starting training");
 		int ngames = 1000;
-		List<GameAnalysis> gas = new ArrayList<GameAnalysis>(ngames);
+		List<GameEpisode> gas = new ArrayList<GameEpisode>(ngames);
 		for(int i = 0; i < ngames; i++){
-			GameAnalysis ga = w.runGame();
+			GameEpisode ga = w.runGame();
 			gas.add(ga);
 			if(i % 10 == 0){
 				System.out.println("Game: " + i + ": " + ga.maxTimeStep());

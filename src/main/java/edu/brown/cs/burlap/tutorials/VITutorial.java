@@ -2,7 +2,7 @@ package edu.brown.cs.burlap.tutorials;
 
 import burlap.behavior.policy.GreedyQPolicy;
 import burlap.behavior.policy.Policy;
-import burlap.behavior.singleagent.EpisodeAnalysis;
+import burlap.behavior.singleagent.Episode;
 import burlap.behavior.singleagent.MDPSolver;
 import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
 import burlap.behavior.singleagent.auxiliary.StateReachability;
@@ -16,19 +16,18 @@ import burlap.domain.singleagent.gridworld.GridWorldVisualizer;
 import burlap.domain.singleagent.gridworld.state.GridAgent;
 import burlap.domain.singleagent.gridworld.state.GridLocation;
 import burlap.domain.singleagent.gridworld.state.GridWorldState;
-import burlap.mdp.core.AbstractGroundedAction;
-import burlap.mdp.core.Domain;
+import burlap.mdp.core.Action;
 import burlap.mdp.core.TerminalFunction;
-import burlap.mdp.core.TransitionProbability;
 import burlap.mdp.core.state.State;
-import burlap.mdp.singleagent.GroundedAction;
-import burlap.mdp.singleagent.RewardFunction;
 import burlap.mdp.singleagent.SADomain;
 import burlap.mdp.singleagent.common.UniformCostRF;
-import burlap.mdp.statehashing.HashableState;
-import burlap.mdp.statehashing.HashableStateFactory;
-import burlap.mdp.statehashing.SimpleHashableStateFactory;
-import burlap.mdp.visualizer.Visualizer;
+import burlap.mdp.singleagent.model.FullModel;
+import burlap.mdp.singleagent.model.RewardFunction;
+import burlap.mdp.singleagent.model.TransitionProb;
+import burlap.statehashing.HashableState;
+import burlap.statehashing.HashableStateFactory;
+import burlap.statehashing.simple.SimpleHashableStateFactory;
+import burlap.visualizer.Visualizer;
 
 import java.util.*;
 
@@ -42,9 +41,9 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 	protected int numIterations;
 
 
-	public VITutorial(Domain domain, RewardFunction rf, TerminalFunction tf, double gamma,
+	public VITutorial(SADomain domain, double gamma,
 					  HashableStateFactory hashingFactory, ValueFunctionInitialization vinit, int numIterations){
-		this.solverInit(domain, rf, tf, gamma, hashingFactory);
+		this.solverInit(domain, gamma, hashingFactory);
 		this.vinit = vinit;
 		this.numIterations = numIterations;
 		this.valueFunction = new HashMap<HashableState, Double>();
@@ -59,32 +58,32 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 	}
 
 	public List<QValue> getQs(State s) {
-		List<GroundedAction> applicableActions = this.getAllGroundedActions(s);
+		List<Action> applicableActions = this.getAllGroundedActions(s);
 		List<QValue> qs = new ArrayList<QValue>(applicableActions.size());
-		for(GroundedAction ga : applicableActions){
+		for(Action ga : applicableActions){
 			qs.add(this.getQ(s, ga));
 		}
 		return qs;
 	}
 
-	public QValue getQ(State s, AbstractGroundedAction a) {
+	public QValue getQ(State s, Action a) {
 
 		//type cast to the type we're using
-		GroundedAction ga = (GroundedAction)a;
+		Action ga = a;
 
 		//what are the possible outcomes?
-		List<TransitionProbability> tps = ga.transitions(s);
+		List<TransitionProb> tps = ((FullModel)this.model).transitions(s, a);
 
 		//aggregate over each possible outcome
 		double q = 0.;
-		for(TransitionProbability tp : tps){
+		for(TransitionProb tp : tps){
 			//what is reward for this transition?
-			double r = this.rf.reward(s, ga, tp.s);
+			double r = tp.eo.r;
 
 			//what is the value for the next state?
-			double vp = this.valueFunction.get(this.hashingFactory.hashState(tp.s));
+			double vp = this.valueFunction.get(this.hashingFactory.hashState(tp.eo.op));
 
-			//add contribution weighted by transition probabiltiy and
+			//add contribution weighted by transition probability and
 			//discounting the next state
 			q += tp.p * (r + this.gamma * vp);
 		}
@@ -97,7 +96,7 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 
 	protected double bellmanEquation(State s){
 
-		if(this.tf.isTerminal(s)){
+		if(this.model.terminal(s)){
 			return 0.;
 		}
 
@@ -124,7 +123,7 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 			//iterate over each state
 			for(HashableState sh : this.valueFunction.keySet()){
 				//update its value using the bellman equation
-				this.valueFunction.put(sh, this.bellmanEquation(sh.s));
+				this.valueFunction.put(sh, this.bellmanEquation(sh.s()));
 			}
 		}
 
@@ -144,7 +143,7 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 		//initialize the value function for all states
 		for(HashableState hs : hashedStates){
 			if(!this.valueFunction.containsKey(hs)){
-				this.valueFunction.put(hs, this.vinit.value(hs.s));
+				this.valueFunction.put(hs, this.vinit.value(hs.s()));
 			}
 		}
 
@@ -159,7 +158,7 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 		//only go in intended directon 80% of the time
 		gwd.setProbSucceedTransitionDynamics(0.8);
 
-		Domain domain = gwd.generateDomain();
+		SADomain domain = gwd.generateDomain();
 
 		//get initial state with agent in 0,0
 		State s = new GridWorldState(new GridAgent(0, 0), new GridLocation(10, 10, "loc0"));
@@ -173,14 +172,14 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 		//setup vi with 0.99 discount factor, a value
 		//function initialization that initializes all states to value 0, and which will
 		//run for 30 iterations over the state space
-		VITutorial vi = new VITutorial(domain, rf, tf, 0.99, new SimpleHashableStateFactory(),
+		VITutorial vi = new VITutorial(domain, 0.99, new SimpleHashableStateFactory(),
 				new ValueFunctionInitialization.ConstantValueFunctionInitialization(0.0), 30);
 
 		//run planning from our initial state
 		Policy p = vi.planFromState(s);
 
 		//evaluate the policy with one roll out visualize the trajectory
-		EpisodeAnalysis ea = p.evaluateBehavior(s, rf, tf);
+		Episode ea = p.evaluateBehavior(s, domain.getModel());
 
 		Visualizer v = GridWorldVisualizer.getVisualizer(gwd.getMap());
 		new EpisodeSequenceVisualizer(v, domain, Arrays.asList(ea));
