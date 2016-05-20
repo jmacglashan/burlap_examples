@@ -19,14 +19,12 @@ import burlap.domain.singleagent.gridworld.state.GridAgent;
 import burlap.domain.singleagent.gridworld.state.GridLocation;
 import burlap.domain.singleagent.gridworld.state.GridWorldState;
 import burlap.mdp.auxiliary.StateGenerator;
-import burlap.mdp.auxiliary.common.NullTermination;
 import burlap.mdp.core.oo.OODomain;
 import burlap.mdp.core.oo.propositional.GroundedProp;
 import burlap.mdp.core.oo.propositional.PropositionalFunction;
 import burlap.mdp.core.oo.state.OOState;
 import burlap.mdp.core.state.State;
 import burlap.mdp.singleagent.SADomain;
-import burlap.mdp.singleagent.common.NullRewardFunction;
 import burlap.mdp.singleagent.environment.SimulatedEnvironment;
 import burlap.mdp.singleagent.oo.OOSADomain;
 import burlap.shell.visual.VisualExplorer;
@@ -114,7 +112,7 @@ public class IRLExample {
 		}
 
 		//load our saved demonstrations from disk
-		List<Episode> episodes = Episode.parseFilesIntoEAList(pathToEpisodes, domain);
+		List<Episode> episodes = Episode.parseFilesIntoEAList(pathToEpisodes);
 
 		//use either DifferentiableVI or DifferentiableSparseSampling for planning. The latter enables receding horizon IRL,
 		//but you will probably want to use a fairly large horizon for this kind of reward function.
@@ -270,9 +268,9 @@ public class IRLExample {
 
 		//only have one of the below uncommented
 
-		//ex.launchExplorer(); //choose this to record demonstrations
+		ex.launchExplorer(); //choose this to record demonstrations
 		//ex.launchSavedEpisodeSequenceVis("irl_demos"); //choose this review the demonstrations that you've recorded
-		ex.runIRL("irl_demos"); //choose this to run MLIRL on the demonstrations and visualize the learned reward function and policy
+		//ex.runIRL("irl_demos"); //choose this to run MLIRL on the demonstrations and visualize the learned reward function and policy
 
 
 	}
