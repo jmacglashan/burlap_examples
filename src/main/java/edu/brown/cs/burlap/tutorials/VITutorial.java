@@ -17,12 +17,10 @@ import burlap.domain.singleagent.gridworld.state.GridAgent;
 import burlap.domain.singleagent.gridworld.state.GridLocation;
 import burlap.domain.singleagent.gridworld.state.GridWorldState;
 import burlap.mdp.core.Action;
-import burlap.mdp.core.TerminalFunction;
 import burlap.mdp.core.state.State;
 import burlap.mdp.singleagent.SADomain;
 import burlap.mdp.singleagent.common.UniformCostRF;
 import burlap.mdp.singleagent.model.FullModel;
-import burlap.mdp.singleagent.model.RewardFunction;
 import burlap.mdp.singleagent.model.TransitionProb;
 import burlap.statehashing.HashableState;
 import burlap.statehashing.HashableStateFactory;
@@ -153,6 +151,8 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 	public static void main(String [] args){
 
 		GridWorldDomain gwd = new GridWorldDomain(11, 11);
+		gwd.setRf(new UniformCostRF());
+		gwd.setTf(new GridWorldTerminalFunction(10, 10));
 		gwd.setMapToFourRooms();
 
 		//only go in intended directon 80% of the time
@@ -162,12 +162,6 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 
 		//get initial state with agent in 0,0
 		State s = new GridWorldState(new GridAgent(0, 0), new GridLocation(10, 10, "loc0"));
-
-		//all transitions return -1
-		RewardFunction rf = new UniformCostRF();
-
-		//terminate in top right corner
-		TerminalFunction tf = new GridWorldTerminalFunction(10, 10);
 
 		//setup vi with 0.99 discount factor, a value
 		//function initialization that initializes all states to value 0, and which will

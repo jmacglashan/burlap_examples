@@ -16,14 +16,12 @@ import burlap.domain.singleagent.gridworld.state.GridAgent;
 import burlap.domain.singleagent.gridworld.state.GridLocation;
 import burlap.domain.singleagent.gridworld.state.GridWorldState;
 import burlap.mdp.core.Action;
-import burlap.mdp.core.TerminalFunction;
 import burlap.mdp.core.state.State;
 import burlap.mdp.singleagent.SADomain;
 import burlap.mdp.singleagent.common.UniformCostRF;
 import burlap.mdp.singleagent.environment.Environment;
 import burlap.mdp.singleagent.environment.EnvironmentOutcome;
 import burlap.mdp.singleagent.environment.SimulatedEnvironment;
-import burlap.mdp.singleagent.model.RewardFunction;
 import burlap.statehashing.HashableState;
 import burlap.statehashing.HashableStateFactory;
 import burlap.statehashing.simple.SimpleHashableStateFactory;
@@ -146,17 +144,13 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QFunction {
 		GridWorldDomain gwd = new GridWorldDomain(11, 11);
 		gwd.setMapToFourRooms();
 		gwd.setProbSucceedTransitionDynamics(0.8);
+		gwd.setRf(new UniformCostRF());
+		gwd.setTf(new GridWorldTerminalFunction(10, 10));
 
 		SADomain domain = gwd.generateDomain();
 
 		//get initial state with agent in 0,0
 		State s = new GridWorldState(new GridAgent(0, 0), new GridLocation(10, 10, "loc0"));
-
-		//all transitions return -1
-		RewardFunction rf = new UniformCostRF();
-
-		//terminate in top right corner
-		TerminalFunction tf = new GridWorldTerminalFunction(10, 10);
 
 		//create environment
 		SimulatedEnvironment env = new SimulatedEnvironment(domain, s);
