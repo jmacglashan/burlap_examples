@@ -2,6 +2,7 @@ package edu.brown.cs.burlap.tutorials;
 
 import burlap.behavior.policy.GreedyQPolicy;
 import burlap.behavior.policy.Policy;
+import burlap.behavior.policy.PolicyUtils;
 import burlap.behavior.singleagent.Episode;
 import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
 import burlap.behavior.singleagent.auxiliary.StateReachability;
@@ -103,7 +104,7 @@ public class BasicBehavior {
 
 		DeterministicPlanner planner = new BFS(domain, goalCondition, hashingFactory);
 		Policy p = planner.planFromState(initialState);
-		p.evaluateBehavior(initialState, domain.getModel()).writeToFile(outputPath + "bfs");
+		PolicyUtils.rollout(p, initialState, domain.getModel()).writeToFile(outputPath + "bfs");
 
 	}
 
@@ -111,7 +112,7 @@ public class BasicBehavior {
 
 		DeterministicPlanner planner = new DFS(domain, goalCondition, hashingFactory);
 		Policy p = planner.planFromState(initialState);
-		p.evaluateBehavior(initialState, domain.getModel()).writeToFile(outputPath + "dfs");
+		PolicyUtils.rollout(p, initialState, domain.getModel()).writeToFile(outputPath + "dfs");
 
 	}
 
@@ -132,7 +133,7 @@ public class BasicBehavior {
 		DeterministicPlanner planner = new AStar(domain, goalCondition, hashingFactory, mdistHeuristic);
 		Policy p = planner.planFromState(initialState);
 
-		p.evaluateBehavior(initialState, domain.getModel()).writeToFile(outputPath + "astar");
+		PolicyUtils.rollout(p, initialState, domain.getModel()).writeToFile(outputPath + "astar");
 
 	}
 
@@ -141,7 +142,7 @@ public class BasicBehavior {
 		Planner planner = new ValueIteration(domain, 0.99, hashingFactory, 0.001, 100);
 		Policy p = planner.planFromState(initialState);
 
-		p.evaluateBehavior(initialState, domain.getModel()).writeToFile(outputPath + "vi");
+		PolicyUtils.rollout(p, initialState, domain.getModel()).writeToFile(outputPath + "vi");
 
 		simpleValueFunctionVis((ValueFunction)planner, p);
 		//manualValueFunctionVis((ValueFunction)planner, p);

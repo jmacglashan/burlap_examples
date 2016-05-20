@@ -4,6 +4,7 @@ import burlap.behavior.functionapproximation.dense.DenseCrossProductFeatures;
 import burlap.behavior.functionapproximation.dense.NormalizedVariableFeatures;
 import burlap.behavior.functionapproximation.dense.fourier.FourierBasis;
 import burlap.behavior.policy.Policy;
+import burlap.behavior.policy.PolicyUtils;
 import burlap.behavior.singleagent.learning.lspi.LSPI;
 import burlap.behavior.singleagent.learning.lspi.SARSCollector;
 import burlap.behavior.singleagent.learning.lspi.SARSData;
@@ -15,8 +16,8 @@ import burlap.mdp.auxiliary.StateGenerator;
 import burlap.mdp.core.state.vardomain.VariableDomain;
 import burlap.mdp.singleagent.SADomain;
 import burlap.mdp.singleagent.common.VisualActionObserver;
-import burlap.mdp.singleagent.environment.EnvironmentServer;
 import burlap.mdp.singleagent.environment.SimulatedEnvironment;
+import burlap.mdp.singleagent.environment.extensions.EnvironmentServer;
 import burlap.visualizer.Visualizer;
 
 
@@ -51,7 +52,7 @@ public class MCVideo {
 		EnvironmentServer envServ = new EnvironmentServer(env, vob);
 
 		for(int i = 0; i < 100; i++){
-			p.evaluateBehavior(envServ);
+			PolicyUtils.rollout(p, envServ);
 			envServ.resetEnvironment();
 		}
 

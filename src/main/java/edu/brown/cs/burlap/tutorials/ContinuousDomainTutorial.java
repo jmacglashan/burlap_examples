@@ -14,6 +14,7 @@ import burlap.behavior.functionapproximation.sparse.tilecoding.TileCodingFeature
 import burlap.behavior.functionapproximation.sparse.tilecoding.TilingArrangement;
 import burlap.behavior.policy.GreedyQPolicy;
 import burlap.behavior.policy.Policy;
+import burlap.behavior.policy.PolicyUtils;
 import burlap.behavior.singleagent.Episode;
 import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
 import burlap.behavior.singleagent.auxiliary.gridset.FlatStateGridder;
@@ -85,7 +86,7 @@ public class ContinuousDomainTutorial {
 		env.addObservers(vob);
 
 		for(int i = 0; i < 5; i++){
-			p.evaluateBehavior(env);
+			PolicyUtils.rollout(p, env);
 			env.resetEnvironment();
 		}
 
@@ -131,7 +132,7 @@ public class ContinuousDomainTutorial {
 		env.addObservers(vob);
 
 		for(int i = 0; i < 5; i++){
-			p.evaluateBehavior(env);
+			PolicyUtils.rollout(p, env);
 			env.resetEnvironment();
 		}
 
@@ -158,7 +159,7 @@ public class ContinuousDomainTutorial {
 		ss.toggleDebugPrinting(false);
 		Policy p = new GreedyQPolicy(ss);
 
-		Episode ea = p.evaluateBehavior(initialState, domain.getModel(), 500);
+		Episode ea = PolicyUtils.rollout(p, initialState, domain.getModel(), 500);
 		System.out.println("Num steps: " + ea.maxTimeStep());
 		Visualizer v = CartPoleVisualizer.getCartPoleVisualizer();
 		new EpisodeSequenceVisualizer(v, domain, Arrays.asList(ea));

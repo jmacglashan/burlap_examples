@@ -67,7 +67,7 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QFunction {
 		while(!env.isInTerminalState() && (steps < maxSteps || maxSteps == -1)){
 
 			//select an action
-			Action a = this.learningPolicy.getAction(curState);
+			Action a = this.learningPolicy.action(curState);
 
 			//take the action and observe outcome
 			EnvironmentOutcome eo = env.executeAction(a);

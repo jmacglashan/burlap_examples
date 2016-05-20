@@ -2,6 +2,7 @@ package edu.brown.cs.burlap.tutorials;
 
 import burlap.behavior.policy.GreedyQPolicy;
 import burlap.behavior.policy.Policy;
+import burlap.behavior.policy.PolicyUtils;
 import burlap.behavior.singleagent.Episode;
 import burlap.behavior.singleagent.MDPSolver;
 import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
@@ -173,7 +174,7 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 		Policy p = vi.planFromState(s);
 
 		//evaluate the policy with one roll out visualize the trajectory
-		Episode ea = p.evaluateBehavior(s, domain.getModel());
+		Episode ea = PolicyUtils.rollout(p, s, domain.getModel());
 
 		Visualizer v = GridWorldVisualizer.getVisualizer(gwd.getMap());
 		new EpisodeSequenceVisualizer(v, domain, Arrays.asList(ea));
