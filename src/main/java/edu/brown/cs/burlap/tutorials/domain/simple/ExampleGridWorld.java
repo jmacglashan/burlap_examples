@@ -173,7 +173,7 @@ public class ExampleGridWorld implements DomainGenerator {
 			}
 
 
-			return null;
+			return tps;
 		}
 
 		public State sample(State s, Action a) {
