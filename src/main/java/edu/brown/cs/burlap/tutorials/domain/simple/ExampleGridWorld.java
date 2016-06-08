@@ -2,13 +2,12 @@ package edu.brown.cs.burlap.tutorials.domain.simple;
 
 
 import burlap.mdp.auxiliary.DomainGenerator;
-import burlap.mdp.auxiliary.common.NullTermination;
-import burlap.mdp.core.*;
-
+import burlap.mdp.core.Action;
+import burlap.mdp.core.StateTransitionProb;
+import burlap.mdp.core.TerminalFunction;
 import burlap.mdp.core.state.State;
 import burlap.mdp.singleagent.SADomain;
 import burlap.mdp.singleagent.action.UniversalActionType;
-import burlap.mdp.singleagent.common.UniformCostRF;
 import burlap.mdp.singleagent.environment.SimulatedEnvironment;
 import burlap.mdp.singleagent.model.FactoredModel;
 import burlap.mdp.singleagent.model.RewardFunction;
@@ -40,24 +39,8 @@ public class ExampleGridWorld implements DomainGenerator {
 	public static final String ACTION_WEST = "west";
 
 
-	protected RewardFunction rf;
-	protected TerminalFunction tf;
-
-	public TerminalFunction getTf() {
-		return tf;
-	}
-
-	public void setTf(TerminalFunction tf) {
-		this.tf = tf;
-	}
-
-	public RewardFunction getRf() {
-		return rf;
-	}
-
-	public void setRf(RewardFunction rf) {
-		this.rf = rf;
-	}
+	protected int goalx = 10;
+	protected int goaly = 10;
 
 	//ordered so first dimension is x
 	protected int [][] map = new int[][]{
@@ -74,7 +57,13 @@ public class ExampleGridWorld implements DomainGenerator {
 			{0,0,0,0,1,0,0,0,0,0,0},
 	};
 
+	public void setGoalLocation(int goalx, int goaly){
+		this.goalx = goalx;
+		this.goaly = goaly;
+	}
 
+
+	@Override
 	public SADomain generateDomain() {
 
 		SADomain domain = new SADomain();
@@ -87,14 +76,8 @@ public class ExampleGridWorld implements DomainGenerator {
 				new UniversalActionType(ACTION_WEST));
 
 		GridWorldStateModel smodel = new GridWorldStateModel();
-		RewardFunction rf = this.rf;
-		TerminalFunction tf = this.tf;
-		if(rf == null){
-			rf = new UniformCostRF();
-		}
-		if(tf == null){
-			tf = new NullTermination();
-		}
+		RewardFunction rf = new ExampleRF(this.goalx, this.goaly);
+		TerminalFunction tf = new ExampleTF(this.goalx, this.goaly);
 
 		domain.setModel(new FactoredModel(smodel, rf, tf));
 
@@ -132,6 +115,7 @@ public class ExampleGridWorld implements DomainGenerator {
 			}
 		}
 
+		@Override
 		public List<StateTransitionProb> stateTransitions(State s, Action a) {
 
 			//get agent current position
@@ -176,6 +160,7 @@ public class ExampleGridWorld implements DomainGenerator {
 			return tps;
 		}
 
+		@Override
 		public State sample(State s, Action a) {
 
 			s = s.copy();
@@ -363,6 +348,7 @@ public class ExampleGridWorld implements DomainGenerator {
 			this.goalY = goalY;
 		}
 
+		@Override
 		public double reward(State s, Action a, State sprime) {
 
 			int ax = (Integer)s.get(VAR_X);
@@ -389,6 +375,7 @@ public class ExampleGridWorld implements DomainGenerator {
 			this.goalY = goalY;
 		}
 
+		@Override
 		public boolean isTerminal(State s) {
 
 			//get location of agent in next state
@@ -412,20 +399,10 @@ public class ExampleGridWorld implements DomainGenerator {
 	public static void main(String [] args){
 
 		ExampleGridWorld gen = new ExampleGridWorld();
-		RewardFunction rf = new ExampleGridWorld.ExampleRF(10, 10);
-		TerminalFunction tf = new ExampleGridWorld.ExampleTF(10, 10);
-		gen.setRf(rf);
-		gen.setTf(tf);
+		gen.setGoalLocation(10, 10);
 		SADomain domain = gen.generateDomain();
-
 		State initialState = new EXGridState(0, 0);
-
-
 		SimulatedEnvironment env = new SimulatedEnvironment(domain, initialState);
-
-		//TerminalExplorer exp = new TerminalExplorer(domain, env);
-		//exp.explore();
-
 
 		Visualizer v = gen.getVisualizer();
 		VisualExplorer exp = new VisualExplorer(domain, env, v);

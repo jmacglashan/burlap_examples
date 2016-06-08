@@ -92,7 +92,7 @@ public class IRLExample {
 	 */
 	public void launchSavedEpisodeSequenceVis(String pathToEpisodes){
 
-		EpisodeSequenceVisualizer evis = new EpisodeSequenceVisualizer(this.v, this.domain, pathToEpisodes);
+		new EpisodeSequenceVisualizer(this.v, this.domain, pathToEpisodes);
 
 	}
 
@@ -221,7 +221,7 @@ public class IRLExample {
 
 		public LocationFeatures(OODomain domain, int numLocations){
 			this.numLocations = numLocations;
-			this.inLocationPF = domain.getPropFunction(GridWorldDomain.PF_AT_LOCATION);
+			this.inLocationPF = domain.propFunction(GridWorldDomain.PF_AT_LOCATION);
 		}
 
 		public LocationFeatures(int numLocations, PropositionalFunction inLocationPF) {

@@ -56,6 +56,7 @@ public class ExGridAgent implements ObjectInstance, MutableState {
 		return new ExGridAgent(x, y, objectName);
 	}
 
+	@Override
 	public MutableState set(Object variableKey, Object value) {
 		if(variableKey.equals(VAR_X)){
 			this.x = StateUtilities.stringOrNumber(value).intValue();
@@ -69,10 +70,12 @@ public class ExGridAgent implements ObjectInstance, MutableState {
 		return this;
 	}
 
+	@Override
 	public List<Object> variableKeys() {
 		return keys;
 	}
 
+	@Override
 	public Object get(Object variableKey) {
 		if(variableKey.equals(VAR_X)){
 			return x;
@@ -83,6 +86,7 @@ public class ExGridAgent implements ObjectInstance, MutableState {
 		throw new UnknownKeyException(variableKey);
 	}
 
+	@Override
 	public ExGridAgent copy() {
 		return new ExGridAgent(x, y, name);
 	}

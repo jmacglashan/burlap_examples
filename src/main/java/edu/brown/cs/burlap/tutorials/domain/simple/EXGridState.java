@@ -31,6 +31,7 @@ public class EXGridState implements MutableState{
 		this.y = y;
 	}
 
+	@Override
 	public MutableState set(Object variableKey, Object value) {
 		if(variableKey.equals(VAR_X)){
 			this.x = StateUtilities.stringOrNumber(value).intValue();
@@ -48,6 +49,7 @@ public class EXGridState implements MutableState{
 		return keys;
 	}
 
+	@Override
 	public Object get(Object variableKey) {
 		if(variableKey.equals(VAR_X)){
 			return x;
@@ -58,6 +60,7 @@ public class EXGridState implements MutableState{
 		throw new UnknownKeyException(variableKey);
 	}
 
+	@Override
 	public EXGridState copy() {
 		return new EXGridState(x, y);
 	}
