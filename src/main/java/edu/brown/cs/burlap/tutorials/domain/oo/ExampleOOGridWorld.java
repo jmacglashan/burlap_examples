@@ -37,6 +37,7 @@ public class ExampleOOGridWorld implements DomainGenerator{
 
 	public static final String VAR_X = "x";
 	public static final String VAR_Y = "y";
+	public static final String VAR_TYPE = "type";
 
 	public static final String CLASS_AGENT = "agent";
 	public static final String CLASS_LOCATION = "location";
