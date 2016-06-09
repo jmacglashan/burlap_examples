@@ -245,7 +245,7 @@ public class IRLExample {
 
 		protected int getActiveLocationVal(OOState s){
 
-			List<GroundedProp> gps = this.inLocationPF.getAllGroundedPropsForState(s);
+			List<GroundedProp> gps = this.inLocationPF.allGroundings(s);
 			for(GroundedProp gp : gps){
 				if(gp.isTrue(s)){
 					GridLocation l = (GridLocation)s.object(gp.params[1]);

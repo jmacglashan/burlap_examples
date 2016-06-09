@@ -35,7 +35,7 @@ public class PlotTest {
 
 		//ends when the agent reaches a location
 		final TerminalFunction tf = new SinglePFTF(
-				PropositionalFunction.getPropositionalFunction(gw.generatePfs(), GridWorldDomain.PF_AT_LOCATION));
+				PropositionalFunction.findPF(gw.generatePfs(), GridWorldDomain.PF_AT_LOCATION));
 
 		//reward function definition
 		final RewardFunction rf = new GoalBasedRF(new TFGoalCondition(tf), 5., -0.1);

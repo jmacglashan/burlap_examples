@@ -73,7 +73,7 @@ public class BasicBehavior {
 		gwdg = new GridWorldDomain(11, 11);
 		gwdg.setMapToFourRooms();
 		rf = new UniformCostRF();
-		tf = new SinglePFTF(PropositionalFunction.getPropositionalFunction(gwdg.generatePfs(), GridWorldDomain.PF_AT_LOCATION));
+		tf = new SinglePFTF(PropositionalFunction.findPF(gwdg.generatePfs(), GridWorldDomain.PF_AT_LOCATION));
 		gwdg.setRf(rf);
 		gwdg.setTf(tf);
 		domain = gwdg.generateDomain();
