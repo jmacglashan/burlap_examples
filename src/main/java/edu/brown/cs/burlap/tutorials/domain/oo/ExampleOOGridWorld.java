@@ -1,7 +1,6 @@
 package edu.brown.cs.burlap.tutorials.domain.oo;
 
 import burlap.mdp.auxiliary.DomainGenerator;
-import burlap.mdp.auxiliary.common.NullTermination;
 import burlap.mdp.auxiliary.common.SinglePFTF;
 import burlap.mdp.core.Action;
 import burlap.mdp.core.StateTransitionProb;
@@ -14,7 +13,6 @@ import burlap.mdp.core.oo.state.generic.GenericOOState;
 import burlap.mdp.core.state.State;
 import burlap.mdp.singleagent.action.UniversalActionType;
 import burlap.mdp.singleagent.common.SingleGoalPFRF;
-import burlap.mdp.singleagent.common.UniformCostRF;
 import burlap.mdp.singleagent.environment.SimulatedEnvironment;
 import burlap.mdp.singleagent.model.FactoredModel;
 import burlap.mdp.singleagent.model.RewardFunction;
@@ -65,26 +63,6 @@ public class ExampleOOGridWorld implements DomainGenerator{
 			{0,0,0,0,1,0,0,0,0,0,0},
 	};
 
-	protected RewardFunction rf;
-	protected TerminalFunction tf;
-
-
-	public RewardFunction getRf() {
-		return rf;
-	}
-
-	public void setRf(RewardFunction rf) {
-		this.rf = rf;
-	}
-
-	public TerminalFunction getTf() {
-		return tf;
-	}
-
-	public void setTf(TerminalFunction tf) {
-		this.tf = tf;
-	}
-
 	public List<PropositionalFunction> generatePfs(){
 		return Arrays.<PropositionalFunction>asList(new AtLocation());
 	}
@@ -104,19 +82,13 @@ public class ExampleOOGridWorld implements DomainGenerator{
 				new UniversalActionType(ACTION_WEST));
 
 
+		OODomain.Helper.addPfsToDomain(domain, this.generatePfs());
+
 		OOGridWorldStateModel smodel = new OOGridWorldStateModel();
-		RewardFunction rf = this.rf;
-		TerminalFunction tf = this.tf;
-		if(rf == null){
-			rf = new UniformCostRF();
-		}
-		if(tf == null){
-			tf = new NullTermination();
-		}
+		RewardFunction rf = new SingleGoalPFRF(domain.propFunction(PF_AT), 100, -1);
+		TerminalFunction tf = new SinglePFTF(domain.propFunction(PF_AT));
 
 		domain.setModel(new FactoredModel(smodel, rf, tf));
-
-		OODomain.Helper.addPfsToDomain(domain, this.generatePfs());
 
 
 		return domain;
@@ -138,7 +110,7 @@ public class ExampleOOGridWorld implements DomainGenerator{
 			}
 		}
 
-		public java.util.List<StateTransitionProb> stateTransitions(State s, Action a) {
+		public List<StateTransitionProb> stateTransitions(State s, Action a) {
 
 			//get agent current position
 			GenericOOState gs = (GenericOOState)s;
@@ -149,7 +121,7 @@ public class ExampleOOGridWorld implements DomainGenerator{
 
 			int adir = actionDir(a);
 
-			java.util.List<StateTransitionProb> tps = new ArrayList<StateTransitionProb>(4);
+			List<StateTransitionProb> tps = new ArrayList<StateTransitionProb>(4);
 			StateTransitionProb noChange = null;
 			for(int i = 0; i < 4; i++){
 
@@ -181,7 +153,7 @@ public class ExampleOOGridWorld implements DomainGenerator{
 			}
 
 
-			return null;
+			return tps;
 		}
 
 		public State sample(State s, Action a) {
@@ -311,8 +283,6 @@ public class ExampleOOGridWorld implements DomainGenerator{
 
 		}
 
-
-
 	}
 
 
@@ -366,6 +336,7 @@ public class ExampleOOGridWorld implements DomainGenerator{
 
 	public class AgentPainter implements ObjectPainter {
 
+		@Override
 		public void paintObject(Graphics2D g2, OOState s, ObjectInstance ob,
 								float cWidth, float cHeight) {
 
@@ -404,6 +375,7 @@ public class ExampleOOGridWorld implements DomainGenerator{
 
 	public class LocationPainter implements ObjectPainter {
 
+		@Override
 		public void paintObject(Graphics2D g2, OOState s, ObjectInstance ob,
 								float cWidth, float cHeight) {
 
@@ -444,22 +416,9 @@ public class ExampleOOGridWorld implements DomainGenerator{
 	public static void main(String [] args){
 
 		ExampleOOGridWorld gen = new ExampleOOGridWorld();
-		PropositionalFunction atPf = gen.generatePfs().get(0);
-		SingleGoalPFRF rf = new SingleGoalPFRF(atPf, 100, -1);
-		TerminalFunction tf = new SinglePFTF(atPf);
-		gen.setRf(rf);
-		gen.setTf(tf);
 		OOSADomain domain = gen.generateDomain();
-
 		State initialState = new GenericOOState(new ExGridAgent(0, 0), new EXGridLocation(10, 10, "loc0"));
-
-
-
 		SimulatedEnvironment env = new SimulatedEnvironment(domain, initialState);
-
-		//TerminalExplorer exp = new TerminalExplorer(domain, env);
-		//exp.explore();
-
 
 		Visualizer v = gen.getVisualizer();
 		VisualExplorer exp = new VisualExplorer(domain, env, v);
