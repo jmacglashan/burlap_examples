@@ -24,7 +24,6 @@ import burlap.mdp.core.oo.propositional.GroundedProp;
 import burlap.mdp.core.oo.propositional.PropositionalFunction;
 import burlap.mdp.core.oo.state.OOState;
 import burlap.mdp.core.state.State;
-import burlap.mdp.singleagent.SADomain;
 import burlap.mdp.singleagent.environment.SimulatedEnvironment;
 import burlap.mdp.singleagent.oo.OOSADomain;
 import burlap.shell.visual.VisualExplorer;
@@ -116,10 +115,9 @@ public class IRLExample {
 
 		//use either DifferentiableVI or DifferentiableSparseSampling for planning. The latter enables receding horizon IRL,
 		//but you will probably want to use a fairly large horizon for this kind of reward function.
-		double beta = 10.;
-		//DifferentiableVI dplanner = new DifferentiableVI(this.domain, rf, new NullTermination(), 0.99, 8, new SimpleHashableStateFactory(), 0.01, 100);
+		double beta = 10;
+		//DifferentiableVI dplanner = new DifferentiableVI(this.domain, rf, 0.99, beta, new SimpleHashableStateFactory(), 0.01, 100);
 		DifferentiableSparseSampling dplanner = new DifferentiableSparseSampling(this.domain, rf, 0.99, new SimpleHashableStateFactory(), 10, -1, beta);
-
 
 		dplanner.toggleDebugPrinting(false);
 
@@ -131,9 +129,8 @@ public class IRLExample {
 		MLIRL irl = new MLIRL(request, 0.1, 0.1, 10);
 		irl.performIRL();
 
-
 		//get all states in the domain so we can visualize the learned reward function for them
-		List<State> allStates = StateReachability.getReachableStates(basicState(), (SADomain) this.domain, new SimpleHashableStateFactory());
+		List<State> allStates = StateReachability.getReachableStates(basicState(), this.domain, new SimpleHashableStateFactory());
 
 		//get a standard grid world value function visualizer, but give it StateRewardFunctionValue which returns the
 		//reward value received upon reaching each state which will thereby let us render the reward function that is
@@ -145,7 +142,6 @@ public class IRLExample {
 				new RewardValueProjection(rf),
 				new GreedyQPolicy((QFunction)request.getPlanner())
 		);
-
 
 		gui.initGUI();
 
