@@ -28,24 +28,21 @@ import burlap.behavior.singleagent.planning.stochastic.valueiteration.ValueItera
 import burlap.behavior.valuefunction.QFunction;
 import burlap.behavior.valuefunction.ValueFunction;
 import burlap.domain.singleagent.gridworld.GridWorldDomain;
+import burlap.domain.singleagent.gridworld.GridWorldTerminalFunction;
 import burlap.domain.singleagent.gridworld.GridWorldVisualizer;
 import burlap.domain.singleagent.gridworld.state.GridAgent;
 import burlap.domain.singleagent.gridworld.state.GridLocation;
 import burlap.domain.singleagent.gridworld.state.GridWorldState;
-import burlap.mdp.auxiliary.common.SinglePFTF;
 import burlap.mdp.auxiliary.stateconditiontest.StateConditionTest;
 import burlap.mdp.auxiliary.stateconditiontest.TFGoalCondition;
 import burlap.mdp.core.TerminalFunction;
-import burlap.mdp.core.oo.propositional.PropositionalFunction;
 import burlap.mdp.core.state.State;
 import burlap.mdp.core.state.vardomain.VariableDomain;
 import burlap.mdp.singleagent.SADomain;
 import burlap.mdp.singleagent.common.GoalBasedRF;
-import burlap.mdp.singleagent.common.UniformCostRF;
 import burlap.mdp.singleagent.environment.Environment;
 import burlap.mdp.singleagent.environment.SimulatedEnvironment;
 import burlap.mdp.singleagent.model.FactoredModel;
-import burlap.mdp.singleagent.model.RewardFunction;
 import burlap.mdp.singleagent.oo.OOSADomain;
 import burlap.statehashing.HashableStateFactory;
 import burlap.statehashing.simple.SimpleHashableStateFactory;
@@ -61,7 +58,6 @@ public class BasicBehavior {
 
 	GridWorldDomain gwdg;
 	OOSADomain domain;
-	RewardFunction rf;
 	TerminalFunction tf;
 	StateConditionTest goalCondition;
 	State initialState;
@@ -72,18 +68,12 @@ public class BasicBehavior {
 	public BasicBehavior(){
 		gwdg = new GridWorldDomain(11, 11);
 		gwdg.setMapToFourRooms();
-		rf = new UniformCostRF();
-		tf = new SinglePFTF(PropositionalFunction.findPF(gwdg.generatePfs(), GridWorldDomain.PF_AT_LOCATION));
-		gwdg.setRf(rf);
+		tf = new GridWorldTerminalFunction(10, 10);
 		gwdg.setTf(tf);
+		goalCondition = new TFGoalCondition(tf);
 		domain = gwdg.generateDomain();
 
-
-
-		goalCondition = new TFGoalCondition(tf);
-
 		initialState = new GridWorldState(new GridAgent(0, 0), new GridLocation(10, 10, "loc0"));
-
 		hashingFactory = new SimpleHashableStateFactory();
 
 		env = new SimulatedEnvironment(domain, initialState);
@@ -104,7 +94,7 @@ public class BasicBehavior {
 
 		DeterministicPlanner planner = new BFS(domain, goalCondition, hashingFactory);
 		Policy p = planner.planFromState(initialState);
-		PolicyUtils.rollout(p, initialState, domain.getModel()).writeToFile(outputPath + "bfs");
+		PolicyUtils.rollout(p, initialState, domain.getModel()).write(outputPath + "bfs");
 
 	}
 
@@ -112,7 +102,7 @@ public class BasicBehavior {
 
 		DeterministicPlanner planner = new DFS(domain, goalCondition, hashingFactory);
 		Policy p = planner.planFromState(initialState);
-		PolicyUtils.rollout(p, initialState, domain.getModel()).writeToFile(outputPath + "dfs");
+		PolicyUtils.rollout(p, initialState, domain.getModel()).write(outputPath + "dfs");
 
 	}
 
@@ -133,7 +123,7 @@ public class BasicBehavior {
 		DeterministicPlanner planner = new AStar(domain, goalCondition, hashingFactory, mdistHeuristic);
 		Policy p = planner.planFromState(initialState);
 
-		PolicyUtils.rollout(p, initialState, domain.getModel()).writeToFile(outputPath + "astar");
+		PolicyUtils.rollout(p, initialState, domain.getModel()).write(outputPath + "astar");
 
 	}
 
@@ -142,7 +132,7 @@ public class BasicBehavior {
 		Planner planner = new ValueIteration(domain, 0.99, hashingFactory, 0.001, 100);
 		Policy p = planner.planFromState(initialState);
 
-		PolicyUtils.rollout(p, initialState, domain.getModel()).writeToFile(outputPath + "vi");
+		PolicyUtils.rollout(p, initialState, domain.getModel()).write(outputPath + "vi");
 
 		simpleValueFunctionVis((ValueFunction)planner, p);
 		//manualValueFunctionVis((ValueFunction)planner, p);
@@ -158,7 +148,7 @@ public class BasicBehavior {
 		for(int i = 0; i < 50; i++){
 			Episode e = agent.runLearningEpisode(env);
 
-			e.writeToFile(outputPath + "ql_" + i);
+			e.write(outputPath + "ql_" + i);
 			System.out.println(i + ": " + e.maxTimeStep());
 
 			//reset environment for next learning episode
@@ -178,7 +168,7 @@ public class BasicBehavior {
 		for(int i = 0; i < 50; i++){
 			Episode e = agent.runLearningEpisode(env);
 
-			e.writeToFile(outputPath + "sarsa_" + i);
+			e.write(outputPath + "sarsa_" + i);
 			System.out.println(i + ": " + e.maxTimeStep());
 
 			//reset environment for next learning episode

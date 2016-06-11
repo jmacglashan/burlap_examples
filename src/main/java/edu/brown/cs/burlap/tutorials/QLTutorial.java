@@ -73,7 +73,7 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QFunction {
 			EnvironmentOutcome eo = env.executeAction(a);
 
 			//record result
-			ea.recordTransitionTo(a, eo.op, eo.r);
+			ea.transition(eo);
 
 			//get the max Q value of the resulting state if it's not terminal, 0 otherwise
 			double maxQ = eo.terminated ? 0. : this.value(eo.op);

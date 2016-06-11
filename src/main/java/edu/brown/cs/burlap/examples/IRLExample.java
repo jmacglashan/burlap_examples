@@ -111,7 +111,7 @@ public class IRLExample {
 		}
 
 		//load our saved demonstrations from disk
-		List<Episode> episodes = Episode.parseFilesIntoEAList(pathToEpisodes);
+		List<Episode> episodes = Episode.readEpisodes(pathToEpisodes);
 
 		//use either DifferentiableVI or DifferentiableSparseSampling for planning. The latter enables receding horizon IRL,
 		//but you will probably want to use a fairly large horizon for this kind of reward function.
