@@ -44,7 +44,7 @@ public class MCVideo {
 		Policy p = lspi.runPolicyIteration(30, 1e-6);
 
 		Visualizer v = MountainCarVisualizer.getVisualizer(mcGen);
-		VisualActionObserver vob = new VisualActionObserver(domain, v);
+		VisualActionObserver vob = new VisualActionObserver(v);
 		vob.initGUI();
 
 		SimulatedEnvironment env = new SimulatedEnvironment(domain,
