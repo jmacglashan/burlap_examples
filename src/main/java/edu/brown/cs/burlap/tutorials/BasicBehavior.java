@@ -38,9 +38,8 @@ import burlap.mdp.auxiliary.stateconditiontest.TFGoalCondition;
 import burlap.mdp.core.TerminalFunction;
 import burlap.mdp.core.state.State;
 import burlap.mdp.core.state.vardomain.VariableDomain;
-import burlap.mdp.singleagent.SADomain;
 import burlap.mdp.singleagent.common.GoalBasedRF;
-import burlap.mdp.singleagent.environment.Environment;
+import burlap.mdp.singleagent.common.VisualActionObserver;
 import burlap.mdp.singleagent.environment.SimulatedEnvironment;
 import burlap.mdp.singleagent.model.FactoredModel;
 import burlap.mdp.singleagent.oo.OOSADomain;
@@ -62,7 +61,7 @@ public class BasicBehavior {
 	StateConditionTest goalCondition;
 	State initialState;
 	HashableStateFactory hashingFactory;
-	Environment env;
+	SimulatedEnvironment env;
 
 
 	public BasicBehavior(){
@@ -79,9 +78,9 @@ public class BasicBehavior {
 		env = new SimulatedEnvironment(domain, initialState);
 
 
-//		VisualActionObserver observer = new VisualActionObserver(domain, GridWorldVisualizer.getVisualizer(gwdg.getMap()));
-//		observer.initGUI();
-//		env = new EnvironmentServer(env, observer);
+		VisualActionObserver observer = new VisualActionObserver(domain, GridWorldVisualizer.getVisualizer(gwdg.getMap()));
+		observer.initGUI();
+		env.addObservers(observer);
 	}
 
 
@@ -111,10 +110,8 @@ public class BasicBehavior {
 		Heuristic mdistHeuristic = new Heuristic() {
 
 			public double h(State s) {
-
 				GridAgent a = ((GridWorldState)s).agent;
-				GridLocation l = ((GridWorldState)s).locations.get(0);
-				double mdist = Math.abs(a.x-l.x) + Math.abs(a.y-l.y);
+				double mdist = Math.abs(a.x-10) + Math.abs(a.y-10);
 
 				return -mdist;
 			}
@@ -179,7 +176,7 @@ public class BasicBehavior {
 
 	public void simpleValueFunctionVis(ValueFunction valueFunction, Policy p){
 
-		List<State> allStates = StateReachability.getReachableStates(initialState, (SADomain)domain, hashingFactory);
+		List<State> allStates = StateReachability.getReachableStates(initialState, domain, hashingFactory);
 		ValueFunctionVisualizerGUI gui = GridWorldDomain.getGridWorldValueFunctionVisualization(allStates, 11, 11, valueFunction, p);
 		gui.initGUI();
 
@@ -187,7 +184,7 @@ public class BasicBehavior {
 
 	public void manualValueFunctionVis(ValueFunction valueFunction, Policy p){
 
-		List<State> allStates = StateReachability.getReachableStates(initialState, (SADomain)domain, hashingFactory);
+		List<State> allStates = StateReachability.getReachableStates(initialState, domain, hashingFactory);
 
 		//define color function
 		LandmarkColorBlendInterpolation rb = new LandmarkColorBlendInterpolation();
