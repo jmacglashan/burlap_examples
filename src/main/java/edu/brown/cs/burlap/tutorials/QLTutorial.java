@@ -14,12 +14,10 @@ import burlap.domain.singleagent.gridworld.GridWorldDomain;
 import burlap.domain.singleagent.gridworld.GridWorldTerminalFunction;
 import burlap.domain.singleagent.gridworld.GridWorldVisualizer;
 import burlap.domain.singleagent.gridworld.state.GridAgent;
-import burlap.domain.singleagent.gridworld.state.GridLocation;
 import burlap.domain.singleagent.gridworld.state.GridWorldState;
 import burlap.mdp.core.Action;
 import burlap.mdp.core.state.State;
 import burlap.mdp.singleagent.SADomain;
-import burlap.mdp.singleagent.common.UniformCostRF;
 import burlap.mdp.singleagent.environment.Environment;
 import burlap.mdp.singleagent.environment.EnvironmentOutcome;
 import burlap.mdp.singleagent.environment.SimulatedEnvironment;
@@ -54,13 +52,15 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QProvider {
 
 	}
 
+	@Override
 	public Episode runLearningEpisode(Environment env) {
 		return this.runLearningEpisode(env, -1);
 	}
 
+	@Override
 	public Episode runLearningEpisode(Environment env, int maxSteps) {
-		//initialize our episode analysis object with the initial state of the environment
-		Episode ea = new Episode(env.currentObservation());
+		//initialize our episode object with the initial state of the environment
+		Episode e = new Episode(env.currentObservation());
 
 		//behave until a terminal state or max steps is reached
 		State curState = env.currentObservation();
@@ -74,7 +74,7 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QProvider {
 			EnvironmentOutcome eo = env.executeAction(a);
 
 			//record result
-			ea.transition(eo);
+			e.transition(eo);
 
 			//get the max Q value of the resulting state if it's not terminal, 0 otherwise
 			double maxQ = eo.terminated ? 0. : this.value(eo.op);
@@ -84,13 +84,13 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QProvider {
 			oldQ.q = oldQ.q + this.learningRate * (eo.r + this.gamma * maxQ - oldQ.q);
 
 
-			//move on to next state
+			//update state pointer to next environment state observed
 			curState = eo.op;
 			steps++;
 
 		}
 
-		return ea;
+		return e;
 	}
 
 	@Override
@@ -98,6 +98,7 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QProvider {
 		this.qValues.clear();
 	}
 
+	@Override
 	public List<QValue> qValues(State s) {
 		//first get hashed state
 		HashableState sh = this.hashingFactory.hashState(s);
@@ -110,9 +111,9 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QProvider {
 			List<Action> actions = this.applicableActions(s);
 			qs = new ArrayList<QValue>(actions.size());
 			//create a Q-value for each action
-			for(Action ga : actions){
+			for(Action a : actions){
 				//add q with initialized value
-				qs.add(new QValue(s, ga, this.qinit.qValue(s, ga)));
+				qs.add(new QValue(s, a, this.qinit.qValue(s, a)));
 			}
 			//store this for later
 			this.qValues.put(sh, qs);
@@ -121,9 +122,11 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QProvider {
 		return qs;
 	}
 
+	@Override
 	public double qValue(State s, Action a) {
 		return storedQ(s, a).q;
 	}
+
 
 	protected QValue storedQ(State s, Action a){
 		//first get all Q-values
@@ -139,6 +142,7 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QProvider {
 		throw new RuntimeException("Could not find matching Q-value.");
 	}
 
+	@Override
 	public double value(State s) {
 		return QProvider.Helper.maxQ(this, s);
 	}
@@ -149,13 +153,12 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QProvider {
 		GridWorldDomain gwd = new GridWorldDomain(11, 11);
 		gwd.setMapToFourRooms();
 		gwd.setProbSucceedTransitionDynamics(0.8);
-		gwd.setRf(new UniformCostRF());
 		gwd.setTf(new GridWorldTerminalFunction(10, 10));
 
 		SADomain domain = gwd.generateDomain();
 
 		//get initial state with agent in 0,0
-		State s = new GridWorldState(new GridAgent(0, 0), new GridLocation(10, 10, "loc0"));
+		State s = new GridWorldState(new GridAgent(0, 0));
 
 		//create environment
 		SimulatedEnvironment env = new SimulatedEnvironment(domain, s);

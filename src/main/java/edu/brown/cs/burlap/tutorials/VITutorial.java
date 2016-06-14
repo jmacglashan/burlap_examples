@@ -8,17 +8,18 @@ import burlap.behavior.singleagent.MDPSolver;
 import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
 import burlap.behavior.singleagent.auxiliary.StateReachability;
 import burlap.behavior.singleagent.planning.Planner;
-import burlap.behavior.valuefunction.*;
+import burlap.behavior.valuefunction.ConstantValueFunction;
+import burlap.behavior.valuefunction.QProvider;
+import burlap.behavior.valuefunction.QValue;
+import burlap.behavior.valuefunction.ValueFunction;
 import burlap.domain.singleagent.gridworld.GridWorldDomain;
 import burlap.domain.singleagent.gridworld.GridWorldTerminalFunction;
 import burlap.domain.singleagent.gridworld.GridWorldVisualizer;
 import burlap.domain.singleagent.gridworld.state.GridAgent;
-import burlap.domain.singleagent.gridworld.state.GridLocation;
 import burlap.domain.singleagent.gridworld.state.GridWorldState;
 import burlap.mdp.core.Action;
 import burlap.mdp.core.state.State;
 import burlap.mdp.singleagent.SADomain;
-import burlap.mdp.singleagent.common.UniformCostRF;
 import burlap.mdp.singleagent.model.FullModel;
 import burlap.mdp.singleagent.model.TransitionProb;
 import burlap.statehashing.HashableState;
@@ -68,8 +69,9 @@ public class VITutorial extends MDPSolver implements Planner, QProvider {
 	@Override
 	public double qValue(State s, Action a) {
 
-		//type cast to the type we're using
-		Action ga = a;
+		if(this.model.terminal(s)){
+			return 0.;
+		}
 
 		//what are the possible outcomes?
 		List<TransitionProb> tps = ((FullModel)this.model).transitions(s, a);
@@ -91,15 +93,6 @@ public class VITutorial extends MDPSolver implements Planner, QProvider {
 		return q;
 	}
 
-	protected double bellmanEquation(State s){
-
-		if(this.model.terminal(s)){
-			return 0.;
-		}
-
-		return QProvider.Helper.maxQ(this, s);
-	}
-
 	@Override
 	public GreedyQPolicy planFromState(State initialState) {
 
@@ -116,7 +109,7 @@ public class VITutorial extends MDPSolver implements Planner, QProvider {
 			//iterate over each state
 			for(HashableState sh : this.valueFunction.keySet()){
 				//update its value using the bellman equation
-				this.valueFunction.put(sh, this.bellmanEquation(sh.s()));
+				this.valueFunction.put(sh, QProvider.Helper.maxQ(this, sh.s()));
 			}
 		}
 
@@ -126,7 +119,7 @@ public class VITutorial extends MDPSolver implements Planner, QProvider {
 
 	@Override
 	public void resetSolver() {
-
+		this.valueFunction.clear();
 	}
 
 	public void performReachabilityFrom(State seedState){
@@ -146,7 +139,6 @@ public class VITutorial extends MDPSolver implements Planner, QProvider {
 	public static void main(String [] args){
 
 		GridWorldDomain gwd = new GridWorldDomain(11, 11);
-		gwd.setRf(new UniformCostRF());
 		gwd.setTf(new GridWorldTerminalFunction(10, 10));
 		gwd.setMapToFourRooms();
 
@@ -156,7 +148,7 @@ public class VITutorial extends MDPSolver implements Planner, QProvider {
 		SADomain domain = gwd.generateDomain();
 
 		//get initial state with agent in 0,0
-		State s = new GridWorldState(new GridAgent(0, 0), new GridLocation(10, 10, "loc0"));
+		State s = new GridWorldState(new GridAgent(0, 0));
 
 		//setup vi with 0.99 discount factor, a value
 		//function initialization that initializes all states to value 0, and which will
