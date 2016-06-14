@@ -15,7 +15,6 @@ import burlap.behavior.singleagent.options.OptionType;
 import burlap.behavior.singleagent.options.SubgoalOption;
 import burlap.behavior.singleagent.planning.deterministic.DDPlannerPolicy;
 import burlap.behavior.singleagent.planning.deterministic.uninformed.bfs.BFS;
-import burlap.behavior.valuefunction.ValueFunctionInitialization;
 import burlap.domain.singleagent.gridworld.GridWorldDomain;
 import burlap.domain.singleagent.gridworld.GridWorldTerminalFunction;
 import burlap.domain.singleagent.gridworld.GridWorldVisualizer;

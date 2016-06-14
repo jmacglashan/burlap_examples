@@ -11,7 +11,7 @@ import burlap.behavior.singleagent.learnfromdemo.mlirl.MLIRL;
 import burlap.behavior.singleagent.learnfromdemo.mlirl.MLIRLRequest;
 import burlap.behavior.singleagent.learnfromdemo.mlirl.commonrfs.LinearStateDifferentiableRF;
 import burlap.behavior.singleagent.learnfromdemo.mlirl.differentiableplanners.DifferentiableSparseSampling;
-import burlap.behavior.valuefunction.QFunction;
+import burlap.behavior.valuefunction.QProvider;
 import burlap.debugtools.RandomFactory;
 import burlap.domain.singleagent.gridworld.GridWorldDomain;
 import burlap.domain.singleagent.gridworld.GridWorldVisualizer;
@@ -140,7 +140,7 @@ public class IRLExample {
 				5,
 				5,
 				new RewardValueProjection(rf),
-				new GreedyQPolicy((QFunction)request.getPlanner())
+				new GreedyQPolicy((QProvider) request.getPlanner())
 		);
 
 		gui.initGUI();
@@ -264,9 +264,9 @@ public class IRLExample {
 
 		//only have one of the below uncommented
 
-		ex.launchExplorer(); //choose this to record demonstrations
+		//ex.launchExplorer(); //choose this to record demonstrations
 		//ex.launchSavedEpisodeSequenceVis("irl_demos"); //choose this review the demonstrations that you've recorded
-		//ex.runIRL("irl_demos"); //choose this to run MLIRL on the demonstrations and visualize the learned reward function and policy
+		ex.runIRL("irl_demos"); //choose this to run MLIRL on the demonstrations and visualize the learned reward function and policy
 
 
 	}

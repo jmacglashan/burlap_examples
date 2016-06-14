@@ -6,9 +6,10 @@ import burlap.behavior.singleagent.Episode;
 import burlap.behavior.singleagent.MDPSolver;
 import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
 import burlap.behavior.singleagent.learning.LearningAgent;
+import burlap.behavior.valuefunction.ConstantValueFunction;
 import burlap.behavior.valuefunction.QFunction;
+import burlap.behavior.valuefunction.QProvider;
 import burlap.behavior.valuefunction.QValue;
-import burlap.behavior.valuefunction.ValueFunctionInitialization;
 import burlap.domain.singleagent.gridworld.GridWorldDomain;
 import burlap.domain.singleagent.gridworld.GridWorldTerminalFunction;
 import burlap.domain.singleagent.gridworld.GridWorldVisualizer;
@@ -35,15 +36,15 @@ import java.util.Map;
 /**
  * @author James MacGlashan.
  */
-public class QLTutorial extends MDPSolver implements LearningAgent, QFunction {
+public class QLTutorial extends MDPSolver implements LearningAgent, QProvider {
 
 	Map<HashableState, List<QValue>> qValues;
-	ValueFunctionInitialization qinit;
+	QFunction qinit;
 	double learningRate;
 	Policy learningPolicy;
 
 	public QLTutorial(SADomain domain, double gamma, HashableStateFactory hashingFactory,
-					  ValueFunctionInitialization qinit, double learningRate, double epsilon){
+					  QFunction qinit, double learningRate, double epsilon){
 
 		this.solverInit(domain, gamma, hashingFactory);
 		this.qinit = qinit;
@@ -79,7 +80,7 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QFunction {
 			double maxQ = eo.terminated ? 0. : this.value(eo.op);
 
 			//update the old Q-value
-			QValue oldQ = this.getQ(curState, a);
+			QValue oldQ = this.storedQ(curState, a);
 			oldQ.q = oldQ.q + this.learningRate * (eo.r + this.gamma * maxQ - oldQ.q);
 
 
@@ -97,7 +98,7 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QFunction {
 		this.qValues.clear();
 	}
 
-	public List<QValue> getQs(State s) {
+	public List<QValue> qValues(State s) {
 		//first get hashed state
 		HashableState sh = this.hashingFactory.hashState(s);
 
@@ -120,9 +121,13 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QFunction {
 		return qs;
 	}
 
-	public QValue getQ(State s, Action a) {
+	public double qValue(State s, Action a) {
+		return storedQ(s, a).q;
+	}
+
+	protected QValue storedQ(State s, Action a){
 		//first get all Q-values
-		List<QValue> qs = this.getQs(s);
+		List<QValue> qs = this.qValues(s);
 
 		//iterate through stored Q-values to find a match for the input action
 		for(QValue q : qs){
@@ -135,7 +140,7 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QFunction {
 	}
 
 	public double value(State s) {
-		return QFunctionHelper.getOptimalValue(this, s);
+		return QProvider.Helper.maxQ(this, s);
 	}
 
 
@@ -157,7 +162,7 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QFunction {
 
 		//create Q-learning
 		QLTutorial agent = new QLTutorial(domain, 0.99, new SimpleHashableStateFactory(),
-				new ValueFunctionInitialization.ConstantValueFunctionInitialization(), 0.1, 0.1);
+				new ConstantValueFunction(), 0.1, 0.1);
 
 		//run Q-learning and store results in a list
 		List<Episode> episodes = new ArrayList<Episode>(1000);

@@ -25,7 +25,7 @@ import burlap.behavior.singleagent.planning.deterministic.informed.astar.AStar;
 import burlap.behavior.singleagent.planning.deterministic.uninformed.bfs.BFS;
 import burlap.behavior.singleagent.planning.deterministic.uninformed.dfs.DFS;
 import burlap.behavior.singleagent.planning.stochastic.valueiteration.ValueIteration;
-import burlap.behavior.valuefunction.QFunction;
+import burlap.behavior.valuefunction.QProvider;
 import burlap.behavior.valuefunction.ValueFunction;
 import burlap.domain.singleagent.gridworld.GridWorldDomain;
 import burlap.domain.singleagent.gridworld.GridWorldTerminalFunction;
@@ -39,7 +39,6 @@ import burlap.mdp.core.TerminalFunction;
 import burlap.mdp.core.state.State;
 import burlap.mdp.core.state.vardomain.VariableDomain;
 import burlap.mdp.singleagent.common.GoalBasedRF;
-import burlap.mdp.singleagent.common.VisualActionObserver;
 import burlap.mdp.singleagent.environment.SimulatedEnvironment;
 import burlap.mdp.singleagent.model.FactoredModel;
 import burlap.mdp.singleagent.oo.OOSADomain;
@@ -78,9 +77,9 @@ public class BasicBehavior {
 		env = new SimulatedEnvironment(domain, initialState);
 
 
-		VisualActionObserver observer = new VisualActionObserver(domain, GridWorldVisualizer.getVisualizer(gwdg.getMap()));
-		observer.initGUI();
-		env.addObservers(observer);
+//		VisualActionObserver observer = new VisualActionObserver(domain, GridWorldVisualizer.getVisualizer(gwdg.getMap()));
+//		observer.initGUI();
+//		env.addObservers(observer);
 	}
 
 
@@ -152,7 +151,7 @@ public class BasicBehavior {
 			env.resetEnvironment();
 		}
 
-		simpleValueFunctionVis((ValueFunction)agent, new GreedyQPolicy((QFunction)agent));
+		simpleValueFunctionVis((ValueFunction)agent, new GreedyQPolicy((QProvider) agent));
 
 	}
 
@@ -274,11 +273,11 @@ public class BasicBehavior {
 		BasicBehavior example = new BasicBehavior();
 		String outputPath = "output/";
 
-		example.BFSExample(outputPath);
+		//example.BFSExample(outputPath);
 		//example.DFSExample(outputPath);
 		//example.AStarExample(outputPath);
 		//example.valueIterationExample(outputPath);
-		//example.qLearningExample(outputPath);
+		example.qLearningExample(outputPath);
 		//example.sarsaLearningExample(outputPath);
 
 		//example.experimentAndPlotter();

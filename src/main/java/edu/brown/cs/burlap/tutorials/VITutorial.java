@@ -8,9 +8,7 @@ import burlap.behavior.singleagent.MDPSolver;
 import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
 import burlap.behavior.singleagent.auxiliary.StateReachability;
 import burlap.behavior.singleagent.planning.Planner;
-import burlap.behavior.valuefunction.QFunction;
-import burlap.behavior.valuefunction.QValue;
-import burlap.behavior.valuefunction.ValueFunctionInitialization;
+import burlap.behavior.valuefunction.*;
 import burlap.domain.singleagent.gridworld.GridWorldDomain;
 import burlap.domain.singleagent.gridworld.GridWorldTerminalFunction;
 import burlap.domain.singleagent.gridworld.GridWorldVisualizer;
@@ -33,15 +31,15 @@ import java.util.*;
 /**
  * @author James MacGlashan.
  */
-public class VITutorial extends MDPSolver implements Planner, QFunction {
+public class VITutorial extends MDPSolver implements Planner, QProvider {
 
 	protected Map<HashableState, Double> valueFunction;
-	protected ValueFunctionInitialization vinit;
+	protected ValueFunction vinit;
 	protected int numIterations;
 
 
 	public VITutorial(SADomain domain, double gamma,
-					  HashableStateFactory hashingFactory, ValueFunctionInitialization vinit, int numIterations){
+					  HashableStateFactory hashingFactory, ValueFunction vinit, int numIterations){
 		this.solverInit(domain, gamma, hashingFactory);
 		this.vinit = vinit;
 		this.numIterations = numIterations;
@@ -58,17 +56,17 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 	}
 
 	@Override
-	public List<QValue> getQs(State s) {
+	public List<QValue> qValues(State s) {
 		List<Action> applicableActions = this.applicableActions(s);
 		List<QValue> qs = new ArrayList<QValue>(applicableActions.size());
-		for(Action ga : applicableActions){
-			qs.add(this.getQ(s, ga));
+		for(Action a : applicableActions){
+			qs.add(new QValue(s, a, this.qValue(s, a)));
 		}
 		return qs;
 	}
 
 	@Override
-	public QValue getQ(State s, Action a) {
+	public double qValue(State s, Action a) {
 
 		//type cast to the type we're using
 		Action ga = a;
@@ -90,10 +88,7 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 			q += tp.p * (r + this.gamma * vp);
 		}
 
-		//create Q-value wrapper
-		QValue qValue = new QValue(s, ga, q);
-
-		return qValue;
+		return q;
 	}
 
 	protected double bellmanEquation(State s){
@@ -102,12 +97,7 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 			return 0.;
 		}
 
-		List<QValue> qs = this.getQs(s);
-		double maxQ = Double.NEGATIVE_INFINITY;
-		for(QValue q : qs){
-			maxQ = Math.max(maxQ, q.q);
-		}
-		return maxQ;
+		return QProvider.Helper.maxQ(this, s);
 	}
 
 	@Override
@@ -172,7 +162,7 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 		//function initialization that initializes all states to value 0, and which will
 		//run for 30 iterations over the state space
 		VITutorial vi = new VITutorial(domain, 0.99, new SimpleHashableStateFactory(),
-				new ValueFunctionInitialization.ConstantValueFunctionInitialization(0.0), 30);
+				new ConstantValueFunction(0.0), 30);
 
 		//run planning from our initial state
 		Policy p = vi.planFromState(s);
