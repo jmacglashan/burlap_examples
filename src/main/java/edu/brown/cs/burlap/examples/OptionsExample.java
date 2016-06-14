@@ -154,17 +154,17 @@ public class OptionsExample {
 
 			public LearningAgent generateAgent() {
 				QLearning ql = new QLearning(domain, 0.99, new SimpleHashableStateFactory(), qinit, lr);
-				ql.addNonDomainReferencedAction(new OptionType(swn));
-				ql.addNonDomainReferencedAction(new OptionType(swe));
+				ql.addActionType(new OptionType(swn));
+				ql.addActionType(new OptionType(swe));
 
-				ql.addNonDomainReferencedAction(new OptionType(sew));
-				ql.addNonDomainReferencedAction(new OptionType(sen));
+				ql.addActionType(new OptionType(sew));
+				ql.addActionType(new OptionType(sen));
 
-				ql.addNonDomainReferencedAction(new OptionType(nes));
-				ql.addNonDomainReferencedAction(new OptionType(newe));
+				ql.addActionType(new OptionType(nes));
+				ql.addActionType(new OptionType(newe));
 
-				ql.addNonDomainReferencedAction(new OptionType(nwe));
-				ql.addNonDomainReferencedAction(new OptionType(nws));
+				ql.addActionType(new OptionType(nwe));
+				ql.addActionType(new OptionType(nws));
 
 				return ql;
 			}
@@ -179,15 +179,15 @@ public class OptionsExample {
 
 			public LearningAgent generateAgent() {
 				QLearning ql = new QLearning(domain, 0.99, new SimpleHashableStateFactory(), qinit, lr);
-				ql.addNonDomainReferencedAction(new OptionType(swn));
-				ql.addNonDomainReferencedAction(new OptionType(swe));
+				ql.addActionType(new OptionType(swn));
+				ql.addActionType(new OptionType(swe));
 
-				ql.addNonDomainReferencedAction(new OptionType(sew));
-				ql.addNonDomainReferencedAction(new OptionType(sen));
+				ql.addActionType(new OptionType(sew));
+				ql.addActionType(new OptionType(sen));
 
 
-				ql.addNonDomainReferencedAction(new OptionType(nwe));
-				ql.addNonDomainReferencedAction(new OptionType(nws));
+				ql.addActionType(new OptionType(nwe));
+				ql.addActionType(new OptionType(nws));
 
 				return ql;
 			}
@@ -202,11 +202,11 @@ public class OptionsExample {
 
 			public LearningAgent generateAgent() {
 				QLearning ql = new QLearning(domain, 0.99, new SimpleHashableStateFactory(), qinit, lr);
-				ql.addNonDomainReferencedAction(new OptionType(swn));
+				ql.addActionType(new OptionType(swn));
 
-				ql.addNonDomainReferencedAction(new OptionType(sen));
+				ql.addActionType(new OptionType(sen));
 
-				ql.addNonDomainReferencedAction(new OptionType(nwe));
+				ql.addActionType(new OptionType(nwe));
 
 				return ql;
 			}

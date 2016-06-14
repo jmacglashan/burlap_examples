@@ -48,6 +48,7 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 		this.valueFunction = new HashMap<HashableState, Double>();
 	}
 
+	@Override
 	public double value(State s) {
 		Double d = this.valueFunction.get(hashingFactory.hashState(s));
 		if(d == null){
@@ -56,8 +57,9 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 		return d;
 	}
 
+	@Override
 	public List<QValue> getQs(State s) {
-		List<Action> applicableActions = this.getAllGroundedActions(s);
+		List<Action> applicableActions = this.applicableActions(s);
 		List<QValue> qs = new ArrayList<QValue>(applicableActions.size());
 		for(Action ga : applicableActions){
 			qs.add(this.getQ(s, ga));
@@ -65,6 +67,7 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 		return qs;
 	}
 
+	@Override
 	public QValue getQ(State s, Action a) {
 
 		//type cast to the type we're using
@@ -107,6 +110,7 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 		return maxQ;
 	}
 
+	@Override
 	public GreedyQPolicy planFromState(State initialState) {
 
 		HashableState hashedInitialState = this.hashingFactory.hashState(initialState);
@@ -137,7 +141,7 @@ public class VITutorial extends MDPSolver implements Planner, QFunction {
 
 	public void performReachabilityFrom(State seedState){
 
-		Set<HashableState> hashedStates = StateReachability.getReachableHashedStates(seedState, (SADomain) this.domain, this.hashingFactory);
+		Set<HashableState> hashedStates = StateReachability.getReachableHashedStates(seedState, this.domain, this.hashingFactory);
 
 		//initialize the value function for all states
 		for(HashableState hs : hashedStates){

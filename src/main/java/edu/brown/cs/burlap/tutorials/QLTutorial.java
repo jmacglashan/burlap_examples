@@ -106,7 +106,7 @@ public class QLTutorial extends MDPSolver implements LearningAgent, QFunction {
 
 		//create and add initialized Q-values if we don't have them stored for this state
 		if(qs == null){
-			List<Action> actions = this.getAllGroundedActions(s);
+			List<Action> actions = this.applicableActions(s);
 			qs = new ArrayList<QValue>(actions.size());
 			//create a Q-value for each action
 			for(Action ga : actions){
