@@ -154,15 +154,15 @@ public class ContinuousDomainTutorial {
 
 		State initialState = new InvertedPendulumState();
 
-		SparseSampling ss = new SparseSampling(domain, 1, new SimpleHashableStateFactory(), 10 ,1);
+		SparseSampling ss = new SparseSampling(domain, 1, new SimpleHashableStateFactory(), 10, 1);
 		ss.setForgetPreviousPlanResults(true);
 		ss.toggleDebugPrinting(false);
 		Policy p = new GreedyQPolicy(ss);
 
-		Episode ea = PolicyUtils.rollout(p, initialState, domain.getModel(), 500);
-		System.out.println("Num steps: " + ea.maxTimeStep());
+		Episode e = PolicyUtils.rollout(p, initialState, domain.getModel(), 500);
+		System.out.println("Num steps: " + e.maxTimeStep());
 		Visualizer v = CartPoleVisualizer.getCartPoleVisualizer();
-		new EpisodeSequenceVisualizer(v, domain, Arrays.asList(ea));
+		new EpisodeSequenceVisualizer(v, domain, Arrays.asList(e));
 
 	}
 
