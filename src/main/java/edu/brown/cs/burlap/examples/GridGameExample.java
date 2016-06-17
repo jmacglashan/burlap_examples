@@ -68,11 +68,11 @@ public class GridGameExample {
 		jp0.setBreakTiesRandomly(false); //don't break ties randomly
 
 		//create agents that follows their end of the computed the joint policy
-		MultiAgentDPPlanningAgent a0 = new MultiAgentDPPlanningAgent(domain, vi, new PolicyFromJointPolicy(jp0));
-		MultiAgentDPPlanningAgent a1 = new MultiAgentDPPlanningAgent(domain, vi, new PolicyFromJointPolicy(jp0));
+		MultiAgentDPPlanningAgent a0 = new MultiAgentDPPlanningAgent(domain, vi, new PolicyFromJointPolicy(0, jp0), "agent0", at);
+		MultiAgentDPPlanningAgent a1 = new MultiAgentDPPlanningAgent(domain, vi, new PolicyFromJointPolicy(1, jp0), "agent1", at);
 
-		a0.joinWorld(w, at);
-		a1.joinWorld(w, at);
+		w.join(a0);
+		w.join(a1);
 
 		//run some games of the agents playing that policy
 		GameEpisode ga = null;
@@ -109,11 +109,11 @@ public class GridGameExample {
 		ECorrelatedQJointPolicy jp0 = new ECorrelatedQJointPolicy(CorrelatedEquilibriumSolver.CorrelatedEquilibriumObjective.UTILITARIAN, 0.);
 
 
-		MultiAgentDPPlanningAgent a0 = new MultiAgentDPPlanningAgent(domain, vi, new PolicyFromJointPolicy(jp0, true));
-		MultiAgentDPPlanningAgent a1 = new MultiAgentDPPlanningAgent(domain, vi, new PolicyFromJointPolicy(jp0, true));
+		MultiAgentDPPlanningAgent a0 = new MultiAgentDPPlanningAgent(domain, vi, new PolicyFromJointPolicy(0, jp0, true), "agent0", at);
+		MultiAgentDPPlanningAgent a1 = new MultiAgentDPPlanningAgent(domain, vi, new PolicyFromJointPolicy(1, jp0, true), "agent1", at);
 
-		a0.joinWorld(w, at);
-		a1.joinWorld(w, at);
+		w.join(a0);
+		w.join(a1);
 
 		GameEpisode ga = null;
 		List<GameEpisode> games = new ArrayList<GameEpisode>();
@@ -146,11 +146,11 @@ public class GridGameExample {
 		final double learningRate = 0.1;
 		final double defaultQ = 100;
 
-		MultiAgentQLearning a0 = new MultiAgentQLearning(domain, discount, learningRate, hashingFactory, defaultQ, new CoCoQ(), true);
-		MultiAgentQLearning a1 = new MultiAgentQLearning(domain, discount, learningRate, hashingFactory, defaultQ, new CoCoQ(), true);
+		MultiAgentQLearning a0 = new MultiAgentQLearning(domain, discount, learningRate, hashingFactory, defaultQ, new CoCoQ(), true, "agent0", at);
+		MultiAgentQLearning a1 = new MultiAgentQLearning(domain, discount, learningRate, hashingFactory, defaultQ, new CoCoQ(), true, "agent1", at);
 
-		a0.joinWorld(w, at);
-		a1.joinWorld(w, at);
+		w.join(a0);
+		w.join(a1);
 
 
 		//don't have the world print out debug info (comment out if you want to see it!)
@@ -196,11 +196,11 @@ public class GridGameExample {
 		QLearning ql2 = new QLearning(null, 0.99, new SimpleHashableStateFactory(), 0, 0.1);
 
 		//create a single-agent interface for each of our learning algorithm instances
-		LearningAgentToSGAgentInterface a1 = new LearningAgentToSGAgentInterface(domain, ql1);
-		LearningAgentToSGAgentInterface a2 = new LearningAgentToSGAgentInterface(domain, ql2);
+		LearningAgentToSGAgentInterface a1 = new LearningAgentToSGAgentInterface(domain, ql1, "agent0", at);
+		LearningAgentToSGAgentInterface a2 = new LearningAgentToSGAgentInterface(domain, ql2, "agent1", at);
 
-		a1.joinWorld(w, at);
-		a2.joinWorld(w, at);
+		w.join(a1);
+		w.join(a2);
 
 		//don't have the world print out debug info (comment out if you want to see it!)
 		DPrint.toggleCode(w.getDebugId(), false);

@@ -2,12 +2,12 @@ package edu.brown.cs.burlap.tutorials.domain.simple;
 
 
 import burlap.mdp.auxiliary.DomainGenerator;
-import burlap.mdp.core.Action;
 import burlap.mdp.core.StateTransitionProb;
 import burlap.mdp.core.TerminalFunction;
+import burlap.mdp.core.action.Action;
+import burlap.mdp.core.action.UniversalActionType;
 import burlap.mdp.core.state.State;
 import burlap.mdp.singleagent.SADomain;
-import burlap.mdp.singleagent.action.UniversalActionType;
 import burlap.mdp.singleagent.environment.SimulatedEnvironment;
 import burlap.mdp.singleagent.model.FactoredModel;
 import burlap.mdp.singleagent.model.RewardFunction;
