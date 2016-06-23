@@ -1,7 +1,7 @@
 package edu.brown.cs.burlap.examples;
 
 import burlap.behavior.policy.Policy;
-import burlap.behavior.singleagent.EpisodeAnalysis;
+import burlap.behavior.singleagent.Episode;
 import burlap.behavior.singleagent.auxiliary.EpisodeSequenceVisualizer;
 import burlap.behavior.singleagent.auxiliary.performance.LearningAlgorithmExperimenter;
 import burlap.behavior.singleagent.auxiliary.performance.PerformanceMetric;
@@ -9,24 +9,26 @@ import burlap.behavior.singleagent.auxiliary.performance.TrialMode;
 import burlap.behavior.singleagent.learning.LearningAgent;
 import burlap.behavior.singleagent.learning.LearningAgentFactory;
 import burlap.behavior.singleagent.learning.tdmethods.QLearning;
-import burlap.behavior.singleagent.options.DeterministicTerminationOption;
+import burlap.behavior.singleagent.options.EnvironmentOptionOutcome;
 import burlap.behavior.singleagent.options.Option;
+import burlap.behavior.singleagent.options.OptionType;
+import burlap.behavior.singleagent.options.SubgoalOption;
 import burlap.behavior.singleagent.planning.deterministic.DDPlannerPolicy;
 import burlap.behavior.singleagent.planning.deterministic.uninformed.bfs.BFS;
-import burlap.behavior.valuefunction.ValueFunctionInitialization;
 import burlap.domain.singleagent.gridworld.GridWorldDomain;
 import burlap.domain.singleagent.gridworld.GridWorldTerminalFunction;
 import burlap.domain.singleagent.gridworld.GridWorldVisualizer;
-import burlap.oomdp.auxiliary.stateconditiontest.StateConditionTest;
-import burlap.oomdp.core.Domain;
-import burlap.oomdp.core.TerminalFunction;
-import burlap.oomdp.core.objects.ObjectInstance;
-import burlap.oomdp.core.states.State;
-import burlap.oomdp.singleagent.RewardFunction;
-import burlap.oomdp.singleagent.common.UniformCostRF;
-import burlap.oomdp.singleagent.environment.SimulatedEnvironment;
-import burlap.oomdp.statehashing.SimpleHashableStateFactory;
-import burlap.oomdp.visualizer.Visualizer;
+import burlap.domain.singleagent.gridworld.state.GridWorldState;
+import burlap.mdp.auxiliary.stateconditiontest.StateConditionTest;
+import burlap.mdp.core.TerminalFunction;
+import burlap.mdp.core.oo.state.OOVariableKey;
+import burlap.mdp.core.state.State;
+import burlap.mdp.singleagent.SADomain;
+import burlap.mdp.singleagent.common.UniformCostRF;
+import burlap.mdp.singleagent.environment.SimulatedEnvironment;
+import burlap.mdp.singleagent.model.RewardFunction;
+import burlap.statehashing.simple.SimpleHashableStateFactory;
+import burlap.visualizer.Visualizer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +57,7 @@ public class OptionsExample {
 
 		GridWorldDomain gwd = new GridWorldDomain(11, 11);
 		gwd.setMapToFourRooms();
-		Domain domain = gwd.generateDomain();
+		SADomain domain = gwd.generateDomain();
 
 		Option swToNorth = createRoomOption("swToNorth", domain, 1, 5, 0, 0, 4, 4);
 		Option swToEast = createRoomOption("swToEast", domain, 5, 1, 0, 0, 4, 4);
@@ -69,19 +71,19 @@ public class OptionsExample {
 		Option nwToEast = createRoomOption("nwToEast", domain, 5, 8, 0, 6, 4, 10);
 		Option nwToSouth = createRoomOption("nwToSouth", domain, 1, 5, 0, 6, 4, 10);
 
-		List<EpisodeAnalysis> episodes = new ArrayList<EpisodeAnalysis>();
+		List<Episode> episodes = new ArrayList<Episode>();
 
-		episodes.add(optionExecuteResult(swToNorth, GridWorldDomain.getOneAgentNoLocationState(domain, 0, 0)));
-		episodes.add(optionExecuteResult(swToEast, GridWorldDomain.getOneAgentNoLocationState(domain, 0, 0)));
+		episodes.add(optionExecuteResult(domain, swToNorth, new GridWorldState(0, 0)));
+		episodes.add(optionExecuteResult(domain, swToEast, new GridWorldState(0, 0)));
 
-		episodes.add(optionExecuteResult(seToWest, GridWorldDomain.getOneAgentNoLocationState(domain, 10, 0)));
-		episodes.add(optionExecuteResult(seToNorth, GridWorldDomain.getOneAgentNoLocationState(domain, 10, 0)));
+		episodes.add(optionExecuteResult(domain, seToWest, new GridWorldState(10, 0)));
+		episodes.add(optionExecuteResult(domain, seToNorth, new GridWorldState(10, 0)));
 
-		episodes.add(optionExecuteResult(neToSouth, GridWorldDomain.getOneAgentNoLocationState(domain, 10, 10)));
-		episodes.add(optionExecuteResult(neToWest, GridWorldDomain.getOneAgentNoLocationState(domain, 10, 10)));
+		episodes.add(optionExecuteResult(domain, neToSouth, new GridWorldState(10, 10)));
+		episodes.add(optionExecuteResult(domain, neToWest, new GridWorldState(10, 10)));
 
-		episodes.add(optionExecuteResult(nwToEast, GridWorldDomain.getOneAgentNoLocationState(domain, 0, 10)));
-		episodes.add(optionExecuteResult(nwToSouth, GridWorldDomain.getOneAgentNoLocationState(domain, 0, 10)));
+		episodes.add(optionExecuteResult(domain, nwToEast, new GridWorldState(0, 10)));
+		episodes.add(optionExecuteResult(domain, nwToSouth, new GridWorldState(0, 10)));
 
 
 		Visualizer v = GridWorldVisualizer.getVisualizer(gwd.getMap());
@@ -90,9 +92,10 @@ public class OptionsExample {
 
 	}
 
-	public static EpisodeAnalysis optionExecuteResult(Option o, State s){
-		o.getAssociatedGroundedAction().executeIn(s);
-		return o.getLastExecutionResults();
+	public static Episode optionExecuteResult(SADomain domain, Option o, State s){
+		SimulatedEnvironment env = new SimulatedEnvironment(domain, s);
+		EnvironmentOptionOutcome eo = o.control(env, 0.99);
+		return eo.episode;
 	}
 
 	public static void optionComparison(){
@@ -102,12 +105,16 @@ public class OptionsExample {
 		GridWorldDomain gwd = new GridWorldDomain(11, 11);
 		gwd.setMapToFourRooms();
 		//gwd.setProbSucceedTransitionDynamics(0.8);
-		final Domain domain = gwd.generateDomain();
-		State s = GridWorldDomain.getOneAgentNoLocationState(domain, 0, 0);
 
 		RewardFunction rf = new UniformCostRF();
 		TerminalFunction tf = new GridWorldTerminalFunction(10, 10);
-		SimulatedEnvironment env = new SimulatedEnvironment(domain, rf, tf, s);
+		gwd.setRf(rf);
+		gwd.setTf(tf);
+
+		final SADomain domain = gwd.generateDomain();
+		State s = new GridWorldState(0, 0);
+
+		SimulatedEnvironment env = new SimulatedEnvironment(domain, s);
 
 		final Option swn = createRoomOption("swToNorth", domain, 1, 5, 0, 0, 4, 4);
 		final Option swe = createRoomOption("swToEast", domain, 5, 1, 0, 0, 4, 4);
@@ -146,17 +153,17 @@ public class OptionsExample {
 
 			public LearningAgent generateAgent() {
 				QLearning ql = new QLearning(domain, 0.99, new SimpleHashableStateFactory(), qinit, lr);
-				ql.addNonDomainReferencedAction(swn);
-				ql.addNonDomainReferencedAction(swe);
+				ql.addActionType(new OptionType(swn));
+				ql.addActionType(new OptionType(swe));
 
-				ql.addNonDomainReferencedAction(sew);
-				ql.addNonDomainReferencedAction(sen);
+				ql.addActionType(new OptionType(sew));
+				ql.addActionType(new OptionType(sen));
 
-				ql.addNonDomainReferencedAction(nes);
-				ql.addNonDomainReferencedAction(newe);
+				ql.addActionType(new OptionType(nes));
+				ql.addActionType(new OptionType(newe));
 
-				ql.addNonDomainReferencedAction(nwe);
-				ql.addNonDomainReferencedAction(nws);
+				ql.addActionType(new OptionType(nwe));
+				ql.addActionType(new OptionType(nws));
 
 				return ql;
 			}
@@ -171,15 +178,15 @@ public class OptionsExample {
 
 			public LearningAgent generateAgent() {
 				QLearning ql = new QLearning(domain, 0.99, new SimpleHashableStateFactory(), qinit, lr);
-				ql.addNonDomainReferencedAction(swn);
-				ql.addNonDomainReferencedAction(swe);
+				ql.addActionType(new OptionType(swn));
+				ql.addActionType(new OptionType(swe));
 
-				ql.addNonDomainReferencedAction(sew);
-				ql.addNonDomainReferencedAction(sen);
+				ql.addActionType(new OptionType(sew));
+				ql.addActionType(new OptionType(sen));
 
 
-				ql.addNonDomainReferencedAction(nwe);
-				ql.addNonDomainReferencedAction(nws);
+				ql.addActionType(new OptionType(nwe));
+				ql.addActionType(new OptionType(nws));
 
 				return ql;
 			}
@@ -194,11 +201,11 @@ public class OptionsExample {
 
 			public LearningAgent generateAgent() {
 				QLearning ql = new QLearning(domain, 0.99, new SimpleHashableStateFactory(), qinit, lr);
-				ql.addNonDomainReferencedAction(swn);
+				ql.addActionType(new OptionType(swn));
 
-				ql.addNonDomainReferencedAction(sen);
+				ql.addActionType(new OptionType(sen));
 
-				ql.addNonDomainReferencedAction(nwe);
+				ql.addActionType(new OptionType(nwe));
 
 				return ql;
 			}
@@ -206,7 +213,7 @@ public class OptionsExample {
 
 
 		LearningAlgorithmExperimenter exp = new LearningAlgorithmExperimenter(env, 10, 100, noOptions, allOptons, usefulOptions, idealOptions);
-		exp.setUpPlottingConfiguration(500, 300, 2, 800, TrialMode.MOSTRECENTANDAVERAGE, PerformanceMetric.CUMULATIVESTEPSPEREPISODE);
+		exp.setUpPlottingConfiguration(500, 300, 2, 800, TrialMode.MOST_RECENT_AND_AVERAGE, PerformanceMetric.CUMULATIVE_STEPS_PER_EPISODE);
 
 		exp.startExperiment();
 
@@ -226,16 +233,15 @@ public class OptionsExample {
 	 * @param maxY the maximum y value of the room
 	 * @return an option take the agent anywhere within the specified room to the designated doorway
 	 */
-	public static Option createRoomOption(String optionName, final Domain domain, final int doorx, final int doory, final int minX, final int minY, final int maxX, final int maxY){
+	public static Option createRoomOption(String optionName, final SADomain domain, final int doorx, final int doory, final int minX, final int minY, final int maxX, final int maxY){
 
 
 		//initiation conditions for options are anywhere in the defined room region
 		final StateConditionTest initiationConditions = new StateConditionTest() {
 
 			public boolean satisfies(State s) {
-				ObjectInstance agent = s.getFirstObjectOfClass(GridWorldDomain.CLASSAGENT);
-				int x = agent.getIntValForAttribute(GridWorldDomain.ATTX);
-				int y = agent.getIntValForAttribute(GridWorldDomain.ATTY);
+				int x = (Integer)s.get(new OOVariableKey(GridWorldDomain.CLASS_AGENT, GridWorldDomain.VAR_X));
+				int y = (Integer)s.get(new OOVariableKey(GridWorldDomain.CLASS_AGENT, GridWorldDomain.VAR_Y));
 
 				return x >= minX && x <= maxX && y>= minY && y <= maxY;
 			}
@@ -253,9 +259,8 @@ public class OptionsExample {
 		StateConditionTest goalCondition = new StateConditionTest() {
 
 			public boolean satisfies(State s) {
-				ObjectInstance agent = s.getFirstObjectOfClass(GridWorldDomain.CLASSAGENT);
-				int x = agent.getIntValForAttribute(GridWorldDomain.ATTX);
-				int y = agent.getIntValForAttribute(GridWorldDomain.ATTY);
+				int x = (Integer)s.get(new OOVariableKey(GridWorldDomain.CLASS_AGENT, GridWorldDomain.VAR_X));
+				int y = (Integer)s.get(new OOVariableKey(GridWorldDomain.CLASS_AGENT, GridWorldDomain.VAR_Y));
 				return x == doorx && y == doory;
 			}
 		};
@@ -273,7 +278,7 @@ public class OptionsExample {
 		Policy optionPolicy = new DDPlannerPolicy(bfs);
 
 		//now that we have the parts of our option, instantiate it
-		DeterministicTerminationOption option = new DeterministicTerminationOption(optionName, optionPolicy, initiationConditions, terminationConditions);
+		SubgoalOption option = new SubgoalOption(optionName, optionPolicy, initiationConditions, terminationConditions);
 
 		return option;
 	}

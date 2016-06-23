@@ -1,7 +1,7 @@
 package edu.brown.cs.burlap.examples;
 
 import burlap.behavior.singleagent.learning.tdmethods.QLearning;
-import burlap.behavior.stochasticgames.GameAnalysis;
+import burlap.behavior.stochasticgames.GameEpisode;
 import burlap.behavior.stochasticgames.PolicyFromJointPolicy;
 import burlap.behavior.stochasticgames.agents.interfacing.singleagent.LearningAgentToSGAgentInterface;
 import burlap.behavior.stochasticgames.agents.madp.MultiAgentDPPlanningAgent;
@@ -16,15 +16,15 @@ import burlap.behavior.stochasticgames.solvers.CorrelatedEquilibriumSolver;
 import burlap.debugtools.DPrint;
 import burlap.domain.stochasticgames.gridgame.GGVisualizer;
 import burlap.domain.stochasticgames.gridgame.GridGame;
-import burlap.oomdp.core.TerminalFunction;
-import burlap.oomdp.core.states.State;
-import burlap.oomdp.statehashing.HashableStateFactory;
-import burlap.oomdp.statehashing.SimpleHashableStateFactory;
-import burlap.oomdp.stochasticgames.JointReward;
-import burlap.oomdp.stochasticgames.SGAgentType;
-import burlap.oomdp.stochasticgames.SGDomain;
-import burlap.oomdp.stochasticgames.World;
-import burlap.oomdp.visualizer.Visualizer;
+import burlap.mdp.core.TerminalFunction;
+import burlap.mdp.core.state.State;
+import burlap.mdp.stochasticgames.agent.SGAgentType;
+import burlap.mdp.stochasticgames.model.JointRewardFunction;
+import burlap.mdp.stochasticgames.oo.OOSGDomain;
+import burlap.mdp.stochasticgames.world.World;
+import burlap.statehashing.HashableStateFactory;
+import burlap.statehashing.simple.SimpleHashableStateFactory;
+import burlap.visualizer.Visualizer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,15 +42,15 @@ public class GridGameExample {
 
 		//grid game domain
 		GridGame gridGame = new GridGame();
-		final SGDomain domain = (SGDomain)gridGame.generateDomain();
+		final OOSGDomain domain = gridGame.generateDomain();
 
 		final HashableStateFactory hashingFactory = new SimpleHashableStateFactory();
 
 		//run the grid game version of prisoner's dilemma
-		final State s = GridGame.getPrisonersDilemmaInitialState(domain);
+		final State s = GridGame.getPrisonersDilemmaInitialState();
 
 		//define joint reward function and termination conditions for this game
-		JointReward rf = new GridGame.GGJointRewardFunction(domain, -1, 100, false);
+		JointRewardFunction rf = new GridGame.GGJointRewardFunction(domain, -1, 100, false);
 		TerminalFunction tf = new GridGame.GGTerminalFunction(domain);
 
 		//both agents are standard: access to all actions
@@ -68,14 +68,14 @@ public class GridGameExample {
 		jp0.setBreakTiesRandomly(false); //don't break ties randomly
 
 		//create agents that follows their end of the computed the joint policy
-		MultiAgentDPPlanningAgent a0 = new MultiAgentDPPlanningAgent(domain, vi, new PolicyFromJointPolicy(jp0));
-		MultiAgentDPPlanningAgent a1 = new MultiAgentDPPlanningAgent(domain, vi, new PolicyFromJointPolicy(jp0));
+		MultiAgentDPPlanningAgent a0 = new MultiAgentDPPlanningAgent(domain, vi, new PolicyFromJointPolicy(0, jp0), "agent0", at);
+		MultiAgentDPPlanningAgent a1 = new MultiAgentDPPlanningAgent(domain, vi, new PolicyFromJointPolicy(1, jp0), "agent1", at);
 
-		a0.joinWorld(w, at);
-		a1.joinWorld(w, at);
+		w.join(a0);
+		w.join(a1);
 
 		//run some games of the agents playing that policy
-		GameAnalysis ga = null;
+		GameEpisode ga = null;
 		for(int i = 0; i < 3; i++){
 			ga = w.runGame();
 		}
@@ -90,13 +90,13 @@ public class GridGameExample {
 	public static void VICorrelatedTest(){
 
 		GridGame gridGame = new GridGame();
-		final SGDomain domain = (SGDomain)gridGame.generateDomain();
+		final OOSGDomain domain = gridGame.generateDomain();
 
 		final HashableStateFactory hashingFactory = new SimpleHashableStateFactory();
 
-		final State s = GridGame.getPrisonersDilemmaInitialState(domain);
+		final State s = GridGame.getPrisonersDilemmaInitialState();
 
-		JointReward rf = new GridGame.GGJointRewardFunction(domain, -1, 100, false);
+		JointRewardFunction rf = new GridGame.GGJointRewardFunction(domain, -1, 100, false);
 		TerminalFunction tf = new GridGame.GGTerminalFunction(domain);
 
 		SGAgentType at = GridGame.getStandardGridGameAgentType(domain);
@@ -109,14 +109,14 @@ public class GridGameExample {
 		ECorrelatedQJointPolicy jp0 = new ECorrelatedQJointPolicy(CorrelatedEquilibriumSolver.CorrelatedEquilibriumObjective.UTILITARIAN, 0.);
 
 
-		MultiAgentDPPlanningAgent a0 = new MultiAgentDPPlanningAgent(domain, vi, new PolicyFromJointPolicy(jp0, true));
-		MultiAgentDPPlanningAgent a1 = new MultiAgentDPPlanningAgent(domain, vi, new PolicyFromJointPolicy(jp0, true));
+		MultiAgentDPPlanningAgent a0 = new MultiAgentDPPlanningAgent(domain, vi, new PolicyFromJointPolicy(0, jp0, true), "agent0", at);
+		MultiAgentDPPlanningAgent a1 = new MultiAgentDPPlanningAgent(domain, vi, new PolicyFromJointPolicy(1, jp0, true), "agent1", at);
 
-		a0.joinWorld(w, at);
-		a1.joinWorld(w, at);
+		w.join(a0);
+		w.join(a1);
 
-		GameAnalysis ga = null;
-		List<GameAnalysis> games = new ArrayList<GameAnalysis>();
+		GameEpisode ga = null;
+		List<GameEpisode> games = new ArrayList<GameEpisode>();
 		for(int i = 0; i < 10; i++){
 			ga = w.runGame();
 			games.add(ga);
@@ -131,12 +131,12 @@ public class GridGameExample {
 	public static void QLCoCoTest(){
 
 		GridGame gridGame = new GridGame();
-		final SGDomain domain = (SGDomain)gridGame.generateDomain();
+		final OOSGDomain domain = gridGame.generateDomain();
 
 		final HashableStateFactory hashingFactory = new SimpleHashableStateFactory();
 
-		final State s = GridGame.getPrisonersDilemmaInitialState(domain);
-		JointReward rf = new GridGame.GGJointRewardFunction(domain, -1, 100, false);
+		final State s = GridGame.getPrisonersDilemmaInitialState();
+		JointRewardFunction rf = new GridGame.GGJointRewardFunction(domain, -1, 100, false);
 		TerminalFunction tf = new GridGame.GGTerminalFunction(domain);
 		SGAgentType at = GridGame.getStandardGridGameAgentType(domain);
 
@@ -146,11 +146,11 @@ public class GridGameExample {
 		final double learningRate = 0.1;
 		final double defaultQ = 100;
 
-		MultiAgentQLearning a0 = new MultiAgentQLearning(domain, discount, learningRate, hashingFactory, defaultQ, new CoCoQ(), true);
-		MultiAgentQLearning a1 = new MultiAgentQLearning(domain, discount, learningRate, hashingFactory, defaultQ, new CoCoQ(), true);
+		MultiAgentQLearning a0 = new MultiAgentQLearning(domain, discount, learningRate, hashingFactory, defaultQ, new CoCoQ(), true, "agent0", at);
+		MultiAgentQLearning a1 = new MultiAgentQLearning(domain, discount, learningRate, hashingFactory, defaultQ, new CoCoQ(), true, "agent1", at);
 
-		a0.joinWorld(w, at);
-		a1.joinWorld(w, at);
+		w.join(a0);
+		w.join(a1);
 
 
 		//don't have the world print out debug info (comment out if you want to see it!)
@@ -158,9 +158,9 @@ public class GridGameExample {
 
 		System.out.println("Starting training");
 		int ngames = 1000;
-		List<GameAnalysis> games = new ArrayList<GameAnalysis>();
+		List<GameEpisode> games = new ArrayList<GameEpisode>();
 		for(int i = 0; i < ngames; i++){
-			GameAnalysis ga = w.runGame();
+			GameEpisode ga = w.runGame();
 			games.add(ga);
 			if(i % 10 == 0){
 				System.out.println("Game: " + i + ": " + ga.maxTimeStep());
@@ -179,12 +179,12 @@ public class GridGameExample {
 	public static void saInterface(){
 
 		GridGame gridGame = new GridGame();
-		final SGDomain domain = (SGDomain)gridGame.generateDomain();
+		final OOSGDomain domain = gridGame.generateDomain();
 
 		final HashableStateFactory hashingFactory = new SimpleHashableStateFactory();
 
-		final State s = GridGame.getSimpleGameInitialState(domain);
-		JointReward rf = new GridGame.GGJointRewardFunction(domain, -1, 100, false);
+		final State s = GridGame.getSimpleGameInitialState();
+		JointRewardFunction rf = new GridGame.GGJointRewardFunction(domain, -1, 100, false);
 		TerminalFunction tf = new GridGame.GGTerminalFunction(domain);
 		SGAgentType at = GridGame.getStandardGridGameAgentType(domain);
 
@@ -196,20 +196,20 @@ public class GridGameExample {
 		QLearning ql2 = new QLearning(null, 0.99, new SimpleHashableStateFactory(), 0, 0.1);
 
 		//create a single-agent interface for each of our learning algorithm instances
-		LearningAgentToSGAgentInterface a1 = new LearningAgentToSGAgentInterface(domain, ql1);
-		LearningAgentToSGAgentInterface a2 = new LearningAgentToSGAgentInterface(domain, ql2);
+		LearningAgentToSGAgentInterface a1 = new LearningAgentToSGAgentInterface(domain, ql1, "agent0", at);
+		LearningAgentToSGAgentInterface a2 = new LearningAgentToSGAgentInterface(domain, ql2, "agent1", at);
 
-		a1.joinWorld(w, at);
-		a2.joinWorld(w, at);
+		w.join(a1);
+		w.join(a2);
 
 		//don't have the world print out debug info (comment out if you want to see it!)
 		DPrint.toggleCode(w.getDebugId(), false);
 
 		System.out.println("Starting training");
 		int ngames = 1000;
-		List<GameAnalysis> gas = new ArrayList<GameAnalysis>(ngames);
+		List<GameEpisode> gas = new ArrayList<GameEpisode>(ngames);
 		for(int i = 0; i < ngames; i++){
-			GameAnalysis ga = w.runGame();
+			GameEpisode ga = w.runGame();
 			gas.add(ga);
 			if(i % 10 == 0){
 				System.out.println("Game: " + i + ": " + ga.maxTimeStep());
